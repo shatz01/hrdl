@@ -45,7 +45,7 @@ if __name__=="__main__":
 
     # split images into train and test
     train_fish_files, val_fish_files = train_test_split(fish_files, train_size=train_sz, test_size=val_sz)
-    train_dog_files, val_dog_files = train_test_split(fish_files, train_size=train_sz, test_size=val_sz)
+    train_dog_files, val_dog_files = train_test_split(dog_files, train_size=train_sz, test_size=val_sz)
 
     # make them high res as save them next to the data_dir
     train_highres_fish_dir = args.data_dir+"../imagenette_hr/train/fish/"
