@@ -33,7 +33,7 @@ class MyResNet(LightningModule):
 
     def training_step(self, batch, batch_idx):
         # path, x, y = batch
-        x, y = batch
+        path, x, y = batch
         out = self(x)
 
         loss = self.criteria(out, torch.nn.functional.one_hot(y, self.hparams.num_classes).float())
@@ -46,7 +46,7 @@ class MyResNet(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # path, x, y = batch
-        x, y = batch
+        path, x, y = batch
         out = self(x)
 
         

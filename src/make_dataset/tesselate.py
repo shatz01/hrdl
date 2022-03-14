@@ -28,13 +28,14 @@ def tesselate_image(img_path, n_crops, crop_sz):
     return crops
 
 
-def tesselate_folder(data_dir, destination_dir, n_crops, crop_sz):
+def tesselate_folder(data_dir, destination_dir, n_crops, crop_sz, num_list):
     img_names = os.listdir(data_dir)
     for i, img_name in enumerate(tqdm(img_names)):
+        unique_id = num_list.pop()
         full_img_path = data_dir + img_name
         crops = tesselate_image(full_img_path, n_crops, crop_sz)
         for c, crop in enumerate(crops):
-            cv2.imwrite(destination_dir + f'img{i}' + '-' + f'crop{c}' + '.jpg', crop)
+            cv2.imwrite(destination_dir + f'img{unique_id}' + '-' + f'crop{c}' + '.jpg', crop)
     print(f"... done tesselating {data_dir} into {destination_dir} ✅")
 
 if __name__=="__main__":
@@ -65,11 +66,14 @@ if __name__=="__main__":
     os.makedirs(dest_val_fish_folder, exist_ok=True)
     os.makedirs(dest_val_dog_folder, exist_ok=True)
 
+    # list to ensure image names are unique
+    num_list = list(range(100000))
+
     # make crops
-    tesselate_folder(train_fish_folder, dest_train_fish_folder, n_tesselations, tesselation_sz)
-    tesselate_folder(train_dog_folder, dest_train_dog_folder, n_tesselations, tesselation_sz)
-    tesselate_folder(val_fish_folder, dest_val_fish_folder, n_tesselations, tesselation_sz)
-    tesselate_folder(val_dog_folder, dest_val_dog_folder, n_tesselations, tesselation_sz)
+    tesselate_folder(train_fish_folder, dest_train_fish_folder, n_tesselations, tesselation_sz, num_list)
+    tesselate_folder(train_dog_folder, dest_train_dog_folder, n_tesselations, tesselation_sz, num_list)
+    tesselate_folder(val_fish_folder, dest_val_fish_folder, n_tesselations, tesselation_sz, num_list)
+    tesselate_folder(val_dog_folder, dest_val_dog_folder, n_tesselations, tesselation_sz, num_list)
 
     
 

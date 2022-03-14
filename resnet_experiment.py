@@ -3,6 +3,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from src.data_stuff.patch_datamodule import TcgaDataModule
 from src.model_stuff.MyResNet import MyResNet
+from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 
 # --- hypers --- #
 data_dir = '/home/shatz/repos/data/imagenette_tesselated/'
@@ -19,10 +20,10 @@ dm = TcgaDataModule(data_dir=data_dir, batch_size=64, fast_subset=False, min_pat
 
 trainer = Trainer(gpus=1, max_epochs=120,
         logger=logger,
-        # callbacks=[
-        #     PatientLevelValidation.PatientLevelValidation(),
-        #     LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
-        #     ]
+        callbacks=[
+            PatientLevelValidation(),
+            # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
+            ]
         )
 
 trainer.fit(model, dm)

@@ -7,6 +7,8 @@ from tqdm import tqdm
 import glob
 import re
 
+from src.data_stuff.dataset_tools import ImageFolderWithPaths
+
 class TcgaDataModule(pl.LightningDataModule):
     def __init__(self,
             data_dir: str = "/home/shatz/repos/data/imagenette_tesselated/",
@@ -33,7 +35,6 @@ class TcgaDataModule(pl.LightningDataModule):
         rgb_std = (0.2023, 0.1994, 0.2010)
         self.train_transforms = torchvision.transforms.Compose([
             # torchvision.transforms.RandomCrop(32, padding=4),
-            torchvision.transforms.RandomVerticalFlip(),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(rgb_mean, rgb_std),
@@ -53,10 +54,10 @@ class TcgaDataModule(pl.LightningDataModule):
         # else:
 
         
-        self.train_ds = torchvision.datasets.ImageFolder(self.train_dir, self.train_transforms)
-        self.val_ds = torchvision.datasets.ImageFolder(self.val_dir, self.val_transforms)
-        # self.train_ds = dataset_tools.ImageFolderWithPaths(self.train_dir, self.train_transforms)
-        # self.val_ds   = dataset_tools.ImageFolderWithPaths(self.val_dir, self.val_transforms)
+        # self.train_ds = torchvision.datasets.ImageFolder(self.train_dir, self.train_transforms)
+        # self.val_ds = torchvision.datasets.ImageFolder(self.val_dir, self.val_transforms)
+        self.train_ds = ImageFolderWithPaths(self.train_dir, self.train_transforms)
+        self.val_ds   = ImageFolderWithPaths(self.val_dir, self.val_transforms)
         if self.fast_subset:
             train_idxs = list(range(int(len(self.train_ds)/2)))
             val_idxs = list(range(int(len(self.val_ds)/2)))

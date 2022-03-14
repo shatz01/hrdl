@@ -32,8 +32,8 @@ if __name__=="__main__":
     dog_folder = '/home/shatz/repos/data/imagenette2/train/n02102040/'
 
     # how many imgs of each
-    n_images = 60
-    out_res = (8000, 8000)
+    n_images = 150
+    out_res = (7000, 7000)
     val_sz = 0.3
     train_sz = 1-val_sz
 

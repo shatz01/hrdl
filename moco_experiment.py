@@ -12,7 +12,7 @@ from flash.image import ImageClassificationData, ImageEmbedder
 # --- hypers --- #
 batch_size = 16
 memory_bank_size = 4096
-moco_max_epochs = 600
+moco_max_epochs = 250
 data_dir = '/home/shatz/repos/data/imagenette_tesselated/'
 min_patches_per_patient = 0
 # ------------- #
@@ -51,7 +51,7 @@ dm = tcga_moco_dm.MocoDataModule(data_dir=data_dir,
 # class_to_idx = dm.get_class_to_idx_dict()
 
 
-trainer = Trainer(gpus=1, max_epochs=120,
+trainer = Trainer(gpus=1, max_epochs=moco_max_epochs,
         logger=logger,
         # callbacks=[
         #     PatientLevelValidation.PatientLevelValidation(),
@@ -61,4 +61,4 @@ trainer = Trainer(gpus=1, max_epochs=120,
 
 trainer.fit(embedder, dm)
 
-trainer.save_checkpoint("embedder_model.pt")
+trainer.save_checkpoint("moco_model.pt")
