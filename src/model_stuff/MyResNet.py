@@ -46,9 +46,14 @@ class MyResNet(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # path, x, y = batch
-        path, x, y = batch
-        out = self(x)
+        img_id, img_paths, y, x = batch
 
+        # important note
+        # x.shape = torch.Size([bs, 1, 3, 224, 224])
+        # I can squeeze the 2nd dim or reshape. reshape is more general
+        import pdb; pdb.set_trace()
+        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4]
+        out = self(x)
         
         # import pdb; pdb.set_trace()
         val_loss = self.criteria(out, torch.nn.functional.one_hot(y, self.hparams.num_classes).float())

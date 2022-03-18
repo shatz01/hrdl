@@ -1,7 +1,8 @@
 import argparse
 import os
 import numpy as np
-from tqdm import tqdm
+# from tqdm import tqdm
+from rich.progress import track
 import torchvision
 from sklearn.model_selection import train_test_split
 
@@ -30,12 +31,15 @@ def tesselate_image(img_path, n_crops, crop_sz):
 
 def tesselate_folder(data_dir, destination_dir, n_crops, crop_sz, num_list):
     img_names = os.listdir(data_dir)
-    for i, img_name in enumerate(tqdm(img_names)):
+    for i, img_name in enumerate(track(img_names)):
         unique_id = num_list.pop()
+        dest_img_dir = destination_dir + f'img{unique_id}/'
+        os.makedirs(dest_img_dir, exist_ok=True)
         full_img_path = data_dir + img_name
         crops = tesselate_image(full_img_path, n_crops, crop_sz)
         for c, crop in enumerate(crops):
-            cv2.imwrite(destination_dir + f'img{unique_id}' + '-' + f'crop{c}' + '.jpg', crop)
+            img_destination = dest_img_dir + f'crop{c}' + '.jpg'
+            cv2.imwrite(img_destination, crop)
     print(f"... done tesselating {data_dir} into {destination_dir} ✅")
 
 if __name__=="__main__":
