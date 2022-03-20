@@ -185,7 +185,7 @@ class PatchDataModule(pl.LightningDataModule):
                 self.val_ds,
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
-                shuffle=False,
+                shuffle=True,
                 drop_last=True
                 )
         return val_dataloader

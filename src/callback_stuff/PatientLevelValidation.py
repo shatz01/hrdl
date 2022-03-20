@@ -1,93 +1,54 @@
-import pandas as pd
 from collections import defaultdict
 import pytorch_lightning as pl
-import re
 import torch
 import torchmetrics
+import numpy as np
 
 class PatientLevelValidation(pl.Callback):
-    def __init__(self, multi_patch: bool = False) -> None:
+    def __init__(self, group_size: int) -> None:
 
         print("Patient Level Eval initialized")
-
-        self.train_patient_eval_dict = defaultdict(list)
-        self.val_patient_eval_dict = defaultdict(list)
+        self.train_eval_dict = defaultdict(list)
+        self.val_eval_dict = defaultdict(list)
         self.all_patient_targets = {}
-        self.multi_patch = multi_patch
+        self.group_size = group_size
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, unused=0):
-        if not self.multi_patch:
-            paths, x, y = batch
-            batch_outputs = outputs["batch_outputs"]
-            self.patient_eval(paths, batch_outputs, y, 'train')
-        else: #self.multi_patch is True
-            import pdb; pdb.set_trace()
-            paths, x, y = batch
-            # paths is vector 32x1 len(paths[n]) = 8
-            # x is  32x8x224x3 
-            # y is  32x8
-            batch_outputs = outputs["batch_outputs"]
-
-            # unroll all into bsxgs = 32x8 = 256
-            group_sz = len(paths[0].split(',')) # 8 in this case
-            paths = [item for sublist in paths for item in sublist.split(',')]
-            y = y.repeat_interleave(group_sz)
-            patch_batch_outputs = batch_outputs.repeat_interleave(group_sz, axis=0)
-            self.patient_eval(paths, patch_batch_outputs, y, 'train')
+        img_id, img_paths, y, x = batch
+        batch_outputs = outputs["batch_outputs"]
+        self.patient_eval(paths, batch_outputs, y, 'train')
 
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, unused=0):
-        if not self.multi_patch:
-            paths, x, y = batch
-            batch_outputs = outputs["batch_outputs"]
-            self.patient_eval(paths, batch_outputs, y, 'val')
-        else: # self.multi_patch is True
-            paths, x, y = batch
-            # paths is vector 32x1 len(paths[n]) = 8
-            # x is  32x8x224x3 
-            # y is  32x8
-            batch_outputs = outputs["batch_outputs"] #32x2
+        img_id, img_paths, y, x = batch
+        batch_outputs = outputs["batch_outputs"]
 
-            # unroll all into bsxgs = 32x8 = 256
-            group_sz = len(paths[0].split(',')) # 8 in this case
-            paths = [item for sublist in paths for item in sublist.split(',')]
-            y = y.repeat_interleave(group_sz)
-            patch_batch_outputs = batch_outputs.repeat_interleave(group_sz, axis=0)
-            self.patient_eval(paths, patch_batch_outputs, y, 'val')
+        # separate patch groups
+        if self.group_size > 1:
+            img_paths_lol = [p.split(",") for p in img_paths]
+            img_paths = [item for sublist in img_paths_lol for item in sublist]
+            y = y.repeat_interleave(self.group_size)
+            batch_outputs = batch_outputs.repeat_interleave(self.group_size, axis=0)
+            img_id = tuple(np.repeat(np.array(img_id), self.group_size))
+
+        self.patient_eval(img_id, img_paths, batch_outputs, y, self.val_eval_dict )
 
 
-
-    def patient_eval(self, batch_paths, batch_scores, batch_targets, train_or_val: str):
+    def patient_eval(self, batch_img_ids, batch_paths, batch_scores, batch_targets, curr_dict):
         """
         Fill the patient eval dicts with patients & scores of current batch.
-        Please specify train_or_val with "train" or "val" batch.
-        """        
-        # path_pattern = r'TCGA-\w{2}-\w{4}|/MSIMUT/|/MSS/'
-        path_pattern = r'train|val|img[\d{1}]+|/fish/|/dog/'
-        
-        # matches look like:
-        # [['/MSS/', 'TCGA-AZ-5403'],... ['/MSIMUT/', 'TCGA-CM-6674']]
-        status_patient_regex = [re.findall(path_pattern, path) for path in batch_paths]
-        with torch.no_grad():
-            for i in zip(status_patient_regex, batch_scores, batch_targets):
-                status_patient, score, target = i
-                score = score.softmax(dim=-1)
-                status = status_patient[0]
-                patient = status_patient[1]
-                
-                # check if all_patient_targets is consistent
-                # if self.current_epoch == 0:
-                if patient in self.all_patient_targets:
-                    assert self.all_patient_targets[patient] == target, pdb.set_trace()# ; f"targets not consistent for patient: {patient}"
-                else:
-                    self.all_patient_targets[patient] = target
+        curr_dict is either tra
+        """
+        # ensure lengths are correct:
+        assert len(batch_paths) == len(batch_scores) and len(batch_scores) == len(batch_targets) and len(batch_img_ids) == len(batch_paths), (
+        "Error. lengths are not the same" )
+        import pdb; pdb.set_trace()
 
-                if train_or_val == 'train':
-                    self.train_patient_eval_dict[patient].append(score)
-                elif train_or_val == 'val':
-                    self.val_patient_eval_dict[patient].append(score)
-                else:
-                    raise Exception('train_or_val can be either train or val yo!')
+
+        # fill dict
+        # with torch.no_grad():
+        #     for for i in zip(batch_img_ids, batch_paths, batch_scores, batch_targets):
+
 
     def on_validation_epoch_end(self, trainer, pl_module):
         """ 

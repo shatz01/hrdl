@@ -32,8 +32,12 @@ class MyResNet(LightningModule):
         return x
 
     def training_step(self, batch, batch_idx):
-        # path, x, y = batch
-        path, x, y = batch
+        img_id, img_paths, y, x = batch
+
+        # important note
+        # x.shape = torch.Size([bs, 1, 3, 224, 224])
+        # I can squeeze the 2nd dim or reshape. reshape is more general
+        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4])
         out = self(x)
 
         loss = self.criteria(out, torch.nn.functional.one_hot(y, self.hparams.num_classes).float())
@@ -45,14 +49,12 @@ class MyResNet(LightningModule):
         return {"loss": loss, "acc": acc, "batch_outputs": out.clone().detach()}
 
     def validation_step(self, batch, batch_idx):
-        # path, x, y = batch
         img_id, img_paths, y, x = batch
 
         # important note
         # x.shape = torch.Size([bs, 1, 3, 224, 224])
         # I can squeeze the 2nd dim or reshape. reshape is more general
-        import pdb; pdb.set_trace()
-        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4]
+        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4])
         out = self(x)
         
         # import pdb; pdb.set_trace()

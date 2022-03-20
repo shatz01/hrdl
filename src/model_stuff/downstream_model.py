@@ -74,15 +74,9 @@ class MyDownstreamModel(LightningModule):
         return x
 
     def training_step(self, batch, batch_idx):
-        paths, x, y = batch
-        # y =group
-        # y = list(zip(*batch["label"]))
-        # y = torch.Tensor([item for sublist in y for item in sublist]).long().to(self.device) # flatten y from list of tuples
-        # patient_ids = batch["patient_id"]
-        # data_paths = batch["data_paths"]
-        # data_shape = batch["data"].shape
-        data_shape = x.shape
-        x = x.view(data_shape[0]*data_shape[1], data_shape[-1], *data_shape[2:4])
+        img_id, img_paths, y, x = batch
+        x = x.view(x.shape[0]*x.shape[1], *x.shape[2:])
+        # x = x.view(data_shape[0]*data_shape[1], data_shape[-1], *data_shape[2:4])
         
         out = self(x)
 
@@ -97,15 +91,8 @@ class MyDownstreamModel(LightningModule):
         return {"loss": loss, "acc_downstream": acc, "batch_outputs": out.clone().detach()}
 
     def validation_step(self, batch, batch_idx):
-        paths, x, y = batch
-        # y = batch["label"]
-        # y = list(zip(*batch["label"])) # list of tuples
-        # y = torch.Tensor([item for sublist in y for item in sublist]).long().to(self.device) # flatten y from list of tuples
-        # patient_ids = batch["patient_id"]
-        # data_paths = batch["data_paths"]
-        # data_shape = batch["data"].shape
-        data_shape = x.shape
-        x = x.view(data_shape[0]*data_shape[1], data_shape[-1], *data_shape[2:4])
+        img_id, img_paths, y, x = batch
+        x = x.view(x.shape[0]*x.shape[1], *x.shape[2:])
 
         out = self(x)
 
