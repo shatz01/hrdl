@@ -116,6 +116,26 @@ class PatchDataset(Dataset):
 
         return img_ids, img_paths, labels, patches_stack
 
+    def get_samples_dict(self):
+        # return the self.samples dict which looks like the depiction in self.make_dataset()
+        return self.samples
+
+    def get_label_dict(self):
+        # returns a dict that correspons image/folder id to label e.g.:
+        # {img_id: label}
+        label_dict = {}
+        for img_id in self.samples.keys():
+            label_dict[img_id] = self.samples[img_id][1]
+        return label_dict
+
+    def get_img_samples_score_dict(self):
+        # returns a dict of dicts where first you index by img_id, then patch_id, and you must put in the score manually
+        img_samples_score_dict = {}
+        for img_id in self.samples.keys():
+            img_samples_score_dict[img_id] = {}
+            for sample_path in self.samples[img_id][0]: # 0 bc self.samples["img432"] = tup([list/of, pathss/], label(0))
+                img_samples_score_dict[img_id][sample_path] = None
+        return img_samples_score_dict
 
 
 ########################## Done Dataset. Datamodule below ##################################

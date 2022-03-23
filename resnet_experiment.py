@@ -24,7 +24,7 @@ dm = PatchDataModule(data_dir=data_dir, batch_size=64, group_size=group_size)
 trainer = Trainer(gpus=1, max_epochs=120,
         logger=logger,
         callbacks=[
-            # PatientLevelValidation(),
+            PatientLevelValidation(group_size=group_size),
             # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
             ]
         )
