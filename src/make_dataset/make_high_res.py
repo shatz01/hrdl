@@ -56,7 +56,6 @@ if __name__=="__main__":
     fish_files = [fish_folder+f for f in fish_files]
     dog_files = os.listdir(dog_folder)[:n_images]
     dog_files = [dog_folder+f for f in dog_files]
-    import pdb; pdb.set_trace()
 
     # split images into train and test
     train_fish_files, val_fish_files = train_test_split(fish_files, train_size=train_sz, test_size=val_sz)

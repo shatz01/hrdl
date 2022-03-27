@@ -44,8 +44,8 @@ def tesselate_folder(data_dir, destination_dir, n_crops, crop_sz, num_list):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str, default='/home/shatz/repos/data/imagenette_hr/')
-    parser.add_argument('--out_dir', type=str, default='/home/shatz/repos/data/imagenette_tesselated/')
+    parser.add_argument('--data_dir', type=str, default='/home/shatz/repos/data/imagenette2_hr/')
+    parser.add_argument('--out_dir', type=str, default='/home/shatz/repos/data/imagenette2_tesselated/')
     args = parser.parse_args()
 
     # folders I want to tesselate

@@ -4,7 +4,7 @@ import torchvision
 from src.data_stuff.NEW_patch_dataset import PatchDataset
 
 # --- hypers --- #
-data_dir = '/home/shatz/repos/data/imagenette_tesselated'
+data_dir = '/home/shatz/repos/data/imagenette2_tesselated'
 batch_size = 4
 group_size = 3
 num_workers = 4
@@ -23,7 +23,7 @@ train_transforms = torchvision.transforms.Compose([
     torchvision.transforms.Normalize(rgb_mean, rgb_std),
 ])
 val_transforms = torchvision.transforms.Compose([
-    torchvision.transforms.ToTesor(),
+    torchvision.transforms.ToTensor(),
     torchvision.transforms.Normalize(rgb_mean, rgb_std),
 ])
 
@@ -54,4 +54,4 @@ val_dl = torch.utils.data.DataLoader(
         )
 
 print("--- DataLoader sample:", end="")
-dl_iter = next(iter(train_dl))n
+dl_iter = next(iter(train_dl))

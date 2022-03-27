@@ -104,7 +104,8 @@ class PatchDataset(Dataset):
         # sample = ('img99852', 'paths/to/all,associated/images,/separated/by/commas', tensor(0))
 
         # add images
-        image_paths = sample[1].split(",")
+        img_id, image_paths, label = sample
+        image_paths = image_paths.split(",")
         patches = []
         for image_path in image_paths:
             patch = Image.open(image_path)
@@ -112,16 +113,17 @@ class PatchDataset(Dataset):
             # patch = self.transform(patch).permute(1, 2, 0) #C,W,H->W,H,C
             patches.append(patch)
         patches_stack = torch.stack(patches)
-        # img_ids, img_paths, labels = sample
 
         if self.group_size > 1:
-            img_paths, patches_stack = self.shuffle(image_paths, patches_stack)
+            image_paths, patches_stack = self.shuffle(image_paths, patches_stack)
+            image_paths = ",".join(image_paths)
+        return img_id, image_paths, label, patches_stack
 
-        return img_ids, img_paths, labels, patches_stack
-
-    def shuffle(paths_list, patches_stack):
+    def shuffle(self, paths_list, patches_stack):
         idxs = torch.randperm(len(paths_list))
-        import pdb; pdb.set_trace()
+        shuffled_paths_list = list(np.array(paths_list)[idxs])
+        shuffled_patches_stack = patches_stack[idxs]
+        return shuffled_paths_list, shuffled_patches_stack,  
 
 
 
