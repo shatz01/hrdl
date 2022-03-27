@@ -1,3 +1,14 @@
+ON_SERVER = "DGX"
+# ON_SERVER = "haifa"
+
+if ON_SERVER=="DGX":
+    data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
+    # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
+    from src.data_stuff.pip_tools import install
+    install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
+elif ON_SERVER=="haifa":
+    data_dir = "/home/shatz/repos/data/imagenette_tesselated/"
+
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
@@ -5,58 +16,54 @@ from src.data_stuff.patch_datamodule import TcgaDataModule
 from src.data_stuff import tcga_moco_dm
 # from src.model_stuff.MyResNet import MyResNet
 from src.model_stuff.moco_model import MocoModel
-
-import flash
-from flash.image import ImageClassificationData, ImageEmbedder
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
 # --- hypers --- #
-batch_size = 16
-memory_bank_size = 4096
-moco_max_epochs = 250
-data_dir = '/home/shatz/repos/data/imagenette_tesselated/'
-min_patches_per_patient = 0
+hypers_dict = {
+        "data_dir": data_dir,
+        "batch_size": 16,
+        "memory_bank_size": 4096,
+        "moco_max_epochs": 700
+        }
+# min_patches_per_patient = 0
 # ------------- #
 
-EXP_NAME = f"myMOCO"
-logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
-# logger = TensorBoardLogger("./lightning_logs", name=EXP_NAME)
+# make experiment name
+bs = hypers_dict["batch_size"]
+ep = hypers_dict["moco_max_epochs"]
+EXP_NAME = f"myMOCO_150imgs_bs{bs}_ep{ep}"
 
-# model = MyResNet()
-# embedder = ImageEmbedder(
-#         backbone="resnet",
-#         training_strategy="barlow_twins",
-#         head="simclr_head",
-#         pretraining_transform="barlow_twins_transform",
-#         training_strategy_kwargs={"latent_embedding_dim": 128},
-#         pretraining_transform_kwargs={"size_crops": [196]},
-# )
-embedder = MocoModel(memory_bank_size, moco_max_epochs)
+# logger
+logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
+logger.experiment.config.update(hypers_dict)
+
+# monitors
+lr_monitor = LearningRateMonitor(logging_interval='step')
+checkpoint_callback = ModelCheckpoint(
+        dirpath=f'/workspace/repos/hrdl/saved_models/moco/{EXP_NAME}',
+    filename='{epoch}-{MOCO_train_loss_ssl:.2f}',
+    save_top_k=3,
+    verbose=True,
+    monitor='MOCO_train_loss_ssl',
+    mode='min'
+)
+
+# model
+embedder = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"])
                              
-# dm = ImageClassificationData.from_folders(
-#     train_folder=data_dir+"train/",
-#     val_folder=data_dir+"val/",
-#     batch_size=64,
-#     # transform_kwargs={"image_size": (196, 196), "mean": (0.485, 0.456, 0.406), "std": (0.229, 0.224, 0.225)},
-# )
-# dm = TcgaDataModule(
-#         data_dir=data_dir,
-#         batch_size=batch_size,
-#         fast_subset=False,
-#         min_patches_per_patient=min_patches_per_patient
-#         )
-dm = tcga_moco_dm.MocoDataModule(data_dir=data_dir,
-        batch_size=batch_size, 
+dm = tcga_moco_dm.MocoDataModule(data_dir=hypers_dict["data_dir"],
+        batch_size=hypers_dict["batch_size"], 
         subset_size=None,
         num_workers=8)
-# class_to_idx = dm.get_class_to_idx_dict()
 
-
-trainer = Trainer(gpus=1, max_epochs=moco_max_epochs,
+trainer = Trainer(gpus=1, max_epochs=hypers_dict["moco_max_epochs"],
         logger=logger,
-        # callbacks=[
-        #     PatientLevelValidation.PatientLevelValidation(),
-        #     LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
-        #     ]
+        callbacks=[
+            lr_monitor,
+            checkpoint_callback,
+            # PatientLevelValidation.PatientLevelValidation(),
+            # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
+            ]
         )
 
 trainer.fit(embedder, dm)

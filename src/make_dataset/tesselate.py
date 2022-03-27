@@ -44,21 +44,21 @@ def tesselate_folder(data_dir, destination_dir, n_crops, crop_sz, num_list):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_dir', type=str, default='/home/shatz/repos/data/imagenette_hr/')
-    parser.add_argument('--target_dir', type=str, default='/home/shatz/repos/data/imagenette_tesselated/')
+    parser.add_argument('--data_dir', type=str, default='/home/shatz/repos/data/imagenette_hr/')
+    parser.add_argument('--out_dir', type=str, default='/home/shatz/repos/data/imagenette_tesselated/')
     args = parser.parse_args()
 
     # folders I want to tesselate
-    train_fish_folder = args.root_dir + 'train/fish/'
-    train_dog_folder = args.root_dir + 'train/dog/'
-    val_fish_folder = args.root_dir + 'val/fish/'
-    val_dog_folder = args.root_dir + 'val/dog/'
+    train_fish_folder = args.data_dir+ 'train/fish/'
+    train_dog_folder = args.data_dir+ 'train/dog/'
+    val_fish_folder = args.data_dir+ 'val/fish/'
+    val_dog_folder = args.data_dir+ 'val/dog/'
 
     # where I want the tesselations to go (dest folders)
-    dest_train_fish_folder = args.target_dir + 'train/fish/'
-    dest_train_dog_folder = args.target_dir + 'train/dog/'
-    dest_val_fish_folder = args.target_dir + 'val/fish/'
-    dest_val_dog_folder = args.target_dir + 'val/dog/'
+    dest_train_fish_folder = args.out_dir + 'train/fish/'
+    dest_train_dog_folder = args.out_dir + 'train/dog/'
+    dest_val_fish_folder = args.out_dir + 'val/fish/'
+    dest_val_dog_folder = args.out_dir + 'val/dog/'
 
     # tesselation/cropping hypers
     n_tesselations = 40

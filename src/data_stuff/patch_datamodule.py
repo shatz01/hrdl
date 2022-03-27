@@ -1,3 +1,5 @@
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 import pytorch_lightning as pl
 import numpy as np
 import pandas as pd
@@ -33,16 +35,30 @@ class TcgaDataModule(pl.LightningDataModule):
 
         rgb_mean = (0.4914, 0.4822, 0.4465)
         rgb_std = (0.2023, 0.1994, 0.2010)
-        self.train_transforms = torchvision.transforms.Compose([
-            # torchvision.transforms.RandomCrop(32, padding=4),
-            torchvision.transforms.RandomHorizontalFlip(),
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(rgb_mean, rgb_std),
-        ])
-        self.val_transforms = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(rgb_mean, rgb_std),
-        ])
+        # self.train_transforms = torchvision.transforms.Compose([
+        #     # torchvision.transforms.RandomCrop(32, padding=4),
+        #     torchvision.transforms.RandomHorizontalFlip(),
+        #     torchvision.transforms.ToTensor(),
+        #     torchvision.transforms.Normalize(rgb_mean, rgb_std),
+        # ])
+        # self.val_transforms = torchvision.transforms.Compose([
+        #     torchvision.transforms.ToTensor(),
+        #     torchvision.transforms.Normalize(rgb_mean, rgb_std),
+        # ])
+        self.train_transforms = A.Compose([
+            # A.RandomResizedCrop(height=224, width=224, p=0.5),
+            # A.RandomBrightnessContrast(brightness_limit=0.8, contrast_limit=0.8, p=0.8),
+            # # A.Blur(p=0.5), Bad for validation
+            # A.GaussNoise(p=0.5),
+            # A.GridDistortion(p=0.5),
+            # A.Flip(p=0.5),
+            A.Normalize(mean=rgb_mean, std=rgb_std),
+            ToTensorV2(),
+            ])
+        self.val_transforms = A.Compose([
+            A.Normalize(mean=rgb_mean, std=rgb_std),
+            ToTensorV2(),
+            ])
         
 
     def setup(self, stage):

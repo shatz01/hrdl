@@ -112,9 +112,19 @@ class PatchDataset(Dataset):
             # patch = self.transform(patch).permute(1, 2, 0) #C,W,H->W,H,C
             patches.append(patch)
         patches_stack = torch.stack(patches)
-        img_ids, img_paths, labels = sample
+        # img_ids, img_paths, labels = sample
+
+        if self.group_size > 1:
+            img_paths, patches_stack = self.shuffle(image_paths, patches_stack)
 
         return img_ids, img_paths, labels, patches_stack
+
+    def shuffle(paths_list, patches_stack):
+        idxs = torch.randperm(len(paths_list))
+        import pdb; pdb.set_trace()
+
+
+
 
     def get_samples_dict(self):
         # return the self.samples dict which looks like the depiction in self.make_dataset()
