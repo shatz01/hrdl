@@ -27,17 +27,19 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         "data_dir": data_dir,
-        "batch_size": 8,
-        "group_size": 5,
+        "batch_size": 16,
+        "group_size": 12,
         "memory_bank_size": 4096,
         "moco_max_epochs": 250,
+        "num_epochs": 800
         }
 # ------------- #
 
 # make experiment name 
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"DownstreamMOCO_gs{gs}_bs{bs}_fromssl2.20"
+eps = hypers_dict["num_epochs"]
+EXP_NAME = f"DownstreamMOCO_gs{gs}_bs{bs}_eps{eps}_fromssl2.20_wshufflegroup"
 
 # logger
 logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
@@ -50,7 +52,7 @@ model = MyDownstreamModel(backbone=backbone, num_classes=2, logger=logger, datal
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])
-trainer = Trainer(gpus=1, max_epochs=hypers_dict["moco_max_epochs"],
+trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         logger=logger,
         callbacks=[
             PatientLevelValidation(group_size=hypers_dict["group_size"]),
