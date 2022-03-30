@@ -13,10 +13,11 @@ import torchmetrics
 import re
 
 class MyDownstreamModel(LightningModule):
-    def __init__(self, backbone, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False):
+    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True):
         super().__init__()
         self.num_classes=num_classes
         self.log_everything = log_everything
+        self.lr = lr
         # self.save_hyperparameters()
 
         # just pass the feature extractor
@@ -27,8 +28,9 @@ class MyDownstreamModel(LightningModule):
         self.tensorboard_exp = self.parent_logger.experiment
 
         # freeze all parameters in feature extractor
-        for p in self.feature_extractor.parameters():
-            p.requires_grad = False
+        if freeze_backbone:
+            for p in self.feature_extractor.parameters():
+                p.requires_grad = False
 
         # trainable params
         in_dim = 512*self.dataloader_group_size
@@ -135,4 +137,4 @@ class MyDownstreamModel(LightningModule):
         self.downstream_val_accs.append(float(mean_val_acc))
         
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.parameters(), self.lr)

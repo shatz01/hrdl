@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 from torch.utils.data import Dataset
 from itertools import zip_longest
 from PIL import Image
+import random
 """
 
 This file contains both a torch dataset as well as a pytorch lightning datamodule (below)
@@ -34,6 +35,10 @@ class PatchDataset(Dataset):
 
         self.samples, self.class_to_idx = self.make_dataset()
         self.grouped_samples = self.group_dataset(self.samples, self.group_size)
+
+        # to check for dataset reloading
+        self.random_id_state = random.randrange(30)
+        print(self.random_id_state)
 
     def make_dataset(self):
         """
@@ -87,6 +92,7 @@ class PatchDataset(Dataset):
         for image_id in dataset_dict.keys():
             patches_list, label = dataset_dict[image_id]
             #https://stackoverflow.com/questions/1624883/alternative-way-to-split-a-list-into-groups-of-n
+            random.shuffle(patches_list) # so that the groups are different every epoch (NEED TO  RE-init dataset)
             grouped_list = list(zip_longest(*(iter(patches_list),) * group_size))
             for image_list in grouped_list:
                 if None not in image_list:
@@ -124,9 +130,6 @@ class PatchDataset(Dataset):
         shuffled_paths_list = list(np.array(paths_list)[idxs])
         shuffled_patches_stack = patches_stack[idxs]
         return shuffled_paths_list, shuffled_patches_stack,  
-
-
-
 
     def get_samples_dict(self):
         # return the self.samples dict which looks like the depiction in self.make_dataset()
@@ -198,9 +201,11 @@ class PatchDataModule(pl.LightningDataModule):
         # splits, etc
         self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
         self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
+        pass
 
 
     def train_dataloader(self):
+        self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
         train_dataloader = torch.utils.data.DataLoader(
                 self.train_ds,
                 batch_size=self.batch_size,
@@ -213,6 +218,7 @@ class PatchDataModule(pl.LightningDataModule):
 
 
     def val_dataloader(self):
+        self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
         val_dataloader = torch.utils.data.DataLoader(
                 self.val_ds,
                 batch_size=self.batch_size,

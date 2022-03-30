@@ -33,6 +33,8 @@ class PatientLevelValidation(pl.Callback):
             y = y.repeat_interleave(self.group_size)
             batch_outputs = batch_outputs.repeat_interleave(self.group_size, axis=0)
             img_id = tuple(np.repeat(np.array(img_id), self.group_size))
+        elif self.group_size==1:
+            img_paths = list(img_paths[0])
 
         self.update_dicts(img_id, img_paths, batch_outputs, y, self.train_img_samples_score_dict)
 
@@ -48,6 +50,8 @@ class PatientLevelValidation(pl.Callback):
             y = y.repeat_interleave(self.group_size)
             batch_outputs = batch_outputs.repeat_interleave(self.group_size, axis=0)
             img_id = tuple(np.repeat(np.array(img_id), self.group_size))
+        elif self.group_size==1:
+            img_paths = list(img_paths[0])
 
         self.update_dicts(img_id, img_paths, batch_outputs, y, self.val_img_samples_score_dict)
 
@@ -59,7 +63,7 @@ class PatientLevelValidation(pl.Callback):
         """
         # ensure lengths are correct:
         assert len(batch_paths) == len(batch_scores) and len(batch_scores) == len(batch_targets) and len(batch_img_ids) == len(batch_paths), (
-        "Error. lengths are not the same")
+                f"\nError. lengths are not the same. lens: batch_paths-{len(batch_paths)}, batch_scores-{len(batch_scores)}, batch_targets-{len(batch_targets)}, batch_img_ids-{len(batch_img_ids)}\n")
 
         # fill dict
         with torch.no_grad():
