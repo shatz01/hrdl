@@ -121,11 +121,11 @@ class PatchDataset(Dataset):
         patches_stack = torch.stack(patches)
 
         if self.group_size > 1:
-            image_paths, patches_stack = self.shuffle(image_paths, patches_stack)
+            image_paths, patches_stack = self.shuffle_tings(image_paths, patches_stack)
             image_paths = ",".join(image_paths)
         return img_id, image_paths, label, patches_stack
 
-    def shuffle(self, paths_list, patches_stack):
+    def shuffle_tings(self, paths_list, patches_stack):
         idxs = torch.randperm(len(paths_list))
         shuffled_paths_list = list(np.array(paths_list)[idxs])
         shuffled_patches_stack = patches_stack[idxs]
@@ -159,17 +159,12 @@ class PatchDataset(Dataset):
 
 
 
-
-
-
-
-
 class PatchDataModule(pl.LightningDataModule):
     def __init__(self,
             data_dir: str = "/home/shatz/repos/data/imagenette_tesselated/",
             batch_size: int = 64,
             group_size: int = 1,
-            num_workers: int = 8,
+            num_workers: int = 4,
             ):
         super().__init__()
         self.data_dir = data_dir
@@ -187,6 +182,8 @@ class PatchDataModule(pl.LightningDataModule):
         rgb_std = (0.2023, 0.1994, 0.2010)
         self.train_transforms = torchvision.transforms.Compose([
             # torchvision.transforms.RandomCrop(32, padding=4),
+            # torchvision.transforms.RandomResizedCrop(size=224, scale=(0.7, 1.0), ratio=(0.8, 1.2)),
+            torchvision.transforms.RandomVerticalFlip(),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(rgb_mean, rgb_std),
@@ -201,7 +198,6 @@ class PatchDataModule(pl.LightningDataModule):
         # splits, etc
         self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
         self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
-        pass
 
 
     def train_dataloader(self):
@@ -212,18 +208,18 @@ class PatchDataModule(pl.LightningDataModule):
                 num_workers=self.num_workers,
                 shuffle=True,
                 # collate_fn=self.collate_fn,
-                drop_last=True
+                drop_last=False
                 )
         return train_dataloader
 
 
     def val_dataloader(self):
-        self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
+        # self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
         val_dataloader = torch.utils.data.DataLoader(
                 self.val_ds,
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
-                shuffle=True,
-                drop_last=True
+                shuffle=False,
+                drop_last=False
                 )
         return val_dataloader

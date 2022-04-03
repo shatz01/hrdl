@@ -87,6 +87,12 @@ class PatientLevelValidation(pl.Callback):
             self.log('val_rawsum_acc', val_rawsum_acc, on_step=False, on_epoch=True)
             self.log('val_majority_vote_acc', val_majority_vote_acc, on_step=False, on_epoch=True)
 
+        # refresh dicts
+        self.train_samples_dict = trainer.datamodule.train_ds.get_samples_dict()
+        self.val_samples_dict = trainer.datamodule.val_ds.get_samples_dict()
+        self.train_img_samples_score_dict = trainer.datamodule.train_ds.get_img_samples_score_dict()
+        self.val_img_samples_score_dict = trainer.datamodule.val_ds.get_img_samples_score_dict()
+
 
     def score_dict(self, img_samples_score_dict, samples_dict, mode=None):
         y = []
@@ -99,7 +105,10 @@ class PatientLevelValidation(pl.Callback):
             for patch_path in patch_yhats:
                 if patch_yhats[patch_path] is not None:
                     img_yhat.append(patch_yhats[patch_path])
-            img_yhat = torch.stack(img_yhat)
+            try:
+                img_yhat = torch.stack(img_yhat)
+            except:
+                import pdb; pdb.set_trace()
             img_yhat_rawsum_logits = torch.sum(img_yhat, dim=0)
             # img_yhat_rawsum_argmax = torch.argmax(img_yhat_rawsum_logits)
             img_yhat_majority_vote = torch.mode(torch.argmax(img_yhat, dim=1)).values

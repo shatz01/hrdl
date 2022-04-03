@@ -10,19 +10,28 @@ from pytorch_lightning import LightningModule, Trainer
 import torchvision.models as models
 import torchmetrics
 
+# FOR TESTING IF MY RESNET IS BETTER #
+from src.model_stuff.MyResNet import MyResNet
+
 import re
 
 class MyDownstreamModel(LightningModule):
-    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True):
+    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly"):
         super().__init__()
         self.num_classes=num_classes
         self.log_everything = log_everything
         self.lr = lr
+        self.fe = fe # CAN BE lightly or myresnet
         # self.save_hyperparameters()
 
         # just pass the feature extractor
         # print("\t backbone:", backbone)
-        self.feature_extractor = copy.deepcopy(backbone)
+        if fe == "lightly":
+            self.feature_extractor = copy.deepcopy(backbone)
+            print("----------------------- USING LIGHTLY ----------------------")
+        elif fe == "myresnet":
+            self.feature_extractor = MyResNet().backbone
+            print("----------------------- USING MYRESNET ----------------------")
         self.dataloader_group_size=dataloader_group_size
         self.parent_logger = logger
         self.tensorboard_exp = self.parent_logger.experiment
@@ -35,8 +44,8 @@ class MyDownstreamModel(LightningModule):
         # trainable params
         in_dim = 512*self.dataloader_group_size
         self.fc = torch.nn.Sequential(
-            torch.nn.Linear(in_dim, 1024),
-            torch.nn.Linear(1024, self.num_classes),
+            torch.nn.Linear(in_dim, 512),
+            torch.nn.Linear(512, self.num_classes),
             # torch.nn.Sigmoid(),
         )
         self.criteria = torch.nn.BCEWithLogitsLoss()

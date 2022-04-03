@@ -21,15 +21,16 @@ from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 # --- hypers --- #
 hypers_dict = {
         "data_dir": data_dir,
-        "batch_size": 32,
-        "group_size": 1
+        "batch_size": 64,
+        "group_size": 1,
+        "num_epochs": 120
         }
 # ------------- #
 
 # make experiment name
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"Resnet_tessimagenette_gs{gs}_bs{bs}_300imgs_noaug"
+EXP_NAME = f"Resnet_tessimagenette_gs{gs}_bs{bs}_300imgs"
 
 # logger
 logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
@@ -40,7 +41,7 @@ model = MyResNet()
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])
-trainer = Trainer(gpus=1, max_epochs=120,
+trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         logger=logger,
         callbacks=[
             PatientLevelValidation(group_size=hypers_dict["group_size"]),

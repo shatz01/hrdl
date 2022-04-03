@@ -23,7 +23,9 @@ hypers_dict = {
         "data_dir": data_dir,
         "batch_size": 16,
         "memory_bank_size": 4096,
-        "moco_max_epochs": 700
+        "moco_max_epochs": 700,
+        "num_gpus": 1,
+        "backbone": "torch"
         }
 # min_patches_per_patient = 0
 # ------------- #
@@ -31,7 +33,9 @@ hypers_dict = {
 # make experiment name
 bs = hypers_dict["batch_size"]
 ep = hypers_dict["moco_max_epochs"]
-EXP_NAME = f"myMOCO_150imgs_bs{bs}_ep{ep}"
+ngp = hypers_dict["num_gpus"]
+backbone = hypers_dict["backbone"]
+EXP_NAME = f"myMOCO_150imgs_bs{bs}_ep{ep}_ngp{ngp}_backbone{backbone}"
 
 # logger
 logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
