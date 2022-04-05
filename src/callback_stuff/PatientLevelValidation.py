@@ -5,13 +5,14 @@ import torchmetrics
 import numpy as np
 
 class PatientLevelValidation(pl.Callback):
-    def __init__(self, group_size: int) -> None:
+    def __init__(self, group_size: int, debug_mode = True) -> None:
 
-        print("Patient Level Eval initialized")
+        print(f"Patient Level Eval initialized with group size {group_size}")
         # self.train_eval_dict = defaultdict(list)
         # self.val_eval_dict = defaultdict(list)
         self.all_patient_targets = {}
         self.group_size = group_size
+        self.debug_mode = debug_mode
 
     def setup(self, trainer, pl_module, stage=None):
         # we need the following dicts to check for label corectness
@@ -95,6 +96,8 @@ class PatientLevelValidation(pl.Callback):
 
 
     def score_dict(self, img_samples_score_dict, samples_dict, mode=None):
+        if self.debug_mode:
+            print(f"\n----------------- Debugging Patient-level Validation --------------------")
         y = []
         y_hat_rawsum = []
         y_hat_majority_vote = []
@@ -102,9 +105,12 @@ class PatientLevelValidation(pl.Callback):
             img_y = samples_dict[img_id][1]
             patch_yhats = img_samples_score_dict[img_id]
             img_yhat = []
+            img_yhat_none_count = 0 # just for error checking
             for patch_path in patch_yhats:
                 if patch_yhats[patch_path] is not None:
                     img_yhat.append(patch_yhats[patch_path])
+                else:
+                    img_yhat_none_count += 1
             try:
                 img_yhat = torch.stack(img_yhat)
             except:
@@ -115,6 +121,8 @@ class PatientLevelValidation(pl.Callback):
             y.append(img_y)
             y_hat_rawsum.append(img_yhat_rawsum_logits)
             y_hat_majority_vote.append(img_yhat_majority_vote)
+            if self.debug_mode:
+                print(f"Amount of nones for {img_id}: {img_yhat_none_count}")
         y = torch.stack(y)
         y_hat_rawsum = torch.stack(y_hat_rawsum)
         y_hat_majority_vote = torch.stack(y_hat_majority_vote)

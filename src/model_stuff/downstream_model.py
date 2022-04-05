@@ -44,7 +44,9 @@ class MyDownstreamModel(LightningModule):
         # trainable params
         in_dim = 512*self.dataloader_group_size
         self.fc = torch.nn.Sequential(
+            torch.nn.Dropout(0.6),
             torch.nn.Linear(in_dim, 512),
+            torch.nn.Dropout(0.6),
             torch.nn.Linear(512, self.num_classes),
             # torch.nn.Sigmoid(),
         )

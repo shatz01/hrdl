@@ -28,6 +28,7 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=2)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--freeze_backbone', type=bool, default=False)
+parser.add_argument('--num_epochs', type=int, default=3200)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -46,7 +47,7 @@ hypers_dict = {
         "freeze_backbone": args.freeze_backbone,
         "memory_bank_size": 4096,
         "moco_max_epochs": 250,
-        "num_epochs": 900
+        "num_epochs": args.num_epochs
         }
 # ------------- #
 
@@ -57,10 +58,10 @@ eps = hypers_dict["num_epochs"]
 lr = hypers_dict["learning_rate"]
 freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
-EXP_NAME = f"RESCOMP_DownstreamMOCO_gs{gs}_bs{bs}_eps{eps}_lr{lr}_freeze{freeze}_fromssl2.20_fe{fe}"
+EXP_NAME = f"moredrop_RESCOMP_DownstreamMOCO_gs{gs}_bs{bs}_eps{eps}_lr{lr}_freeze{freeze}_fromssl2.20_fe{fe}"
 
 # logger
-logger=WandbLogger(project="moti_imagenette_tesselated", name=EXP_NAME)
+logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
