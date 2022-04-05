@@ -1,5 +1,5 @@
-ON_SERVER = "DGX"
-# ON_SERVER = "haifa"
+# ON_SERVER = "DGX"
+ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -7,7 +7,7 @@ if ON_SERVER=="DGX":
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
-    data_dir = "/home/shatz/repos/data/imagenette_tesselated/"
+    data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
 from pytorch_lightning import Trainer
@@ -23,12 +23,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fe', type=str, default='myresnet')
+parser.add_argument('--fe', type=str, default='myresnet') # lightly or myresnet
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--group_size', type=int, default=2)
+parser.add_argument('--group_size', type=int, default=1)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--freeze_backbone', type=bool, default=False)
-parser.add_argument('--num_epochs', type=int, default=3200)
+parser.add_argument('--num_epochs', type=int, default=240)
+parser.add_argument('--load_checkpoint', type=bool, default=False)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -58,7 +59,7 @@ eps = hypers_dict["num_epochs"]
 lr = hypers_dict["learning_rate"]
 freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
-EXP_NAME = f"moredrop_RESCOMP_DownstreamMOCO_gs{gs}_bs{bs}_eps{eps}_lr{lr}_freeze{freeze}_fromssl2.20_fe{fe}"
+EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}_fromssl2.20"
 
 # logger
 logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
@@ -68,7 +69,10 @@ logger.experiment.config.update(hypers_dict)
 lr_monitor = LearningRateMonitor(logging_interval='step')
 
 # model
-model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"]).load_from_checkpoint(hypers_dict["model_loc"], memory_bank_size=hypers_dict["memory_bank_size"])
+if args.load_checkpoint:
+    model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"]).load_from_checkpoint(hypers_dict["model_loc"], memory_bank_size=hypers_dict["memory_bank_size"])
+else:
+    model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"])
 backbone = model.feature_extractor.backbone
 model = MyDownstreamModel(backbone=backbone, lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"])
 
@@ -79,7 +83,7 @@ trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         # reload_dataloaders_every_epoch=True,
         reload_dataloaders_every_n_epochs=1,
         callbacks=[
-            PatientLevelValidation(group_size=hypers_dict["group_size"]),
+            PatientLevelValidation(group_size=hypers_dict["group_size"], debug_mode=False),
             # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
             ]
         )

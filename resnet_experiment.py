@@ -1,5 +1,5 @@
-ON_SERVER = "DGX"
-# ON_SERVER = "haifa"
+# ON_SERVER = "DGX"
+ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -7,14 +7,14 @@ if ON_SERVER=="DGX":
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
-    data_dir = "/home/shatz/repos/data/imagenette_tesselated/"
+    data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 import argparse
 
-from src.data_stuff.patch_datamodule import TcgaDataModule
+# from src.data_stuff.patch_datamodule import TcgaDataModule
 from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.model_stuff.MyResNet import MyResNet
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
@@ -51,7 +51,7 @@ dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["b
 trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         logger=logger,
         callbacks=[
-            PatientLevelValidation(group_size=hypers_dict["group_size"]),
+            PatientLevelValidation(group_size=hypers_dict["group_size"], debug_mode=False),
             # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
             ]
         )
