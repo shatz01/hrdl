@@ -16,12 +16,13 @@ from src.model_stuff.MyResNet import MyResNet
 import re
 
 class MyDownstreamModel(LightningModule):
-    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly"):
+    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly", use_dropout=False):
         super().__init__()
         self.num_classes=num_classes
         self.log_everything = log_everything
         self.lr = lr
         self.fe = fe # CAN BE lightly or myresnet
+        self.use_dropout = use_dropout
         # self.save_hyperparameters()
 
         # just pass the feature extractor
@@ -31,6 +32,7 @@ class MyDownstreamModel(LightningModule):
             print("----------------------- USING LIGHTLY ----------------------")
         elif fe == "myresnet":
             self.feature_extractor = MyResNet().backbone
+            self.use_dropout = True
             print("----------------------- USING MYRESNET ----------------------")
         self.dataloader_group_size=dataloader_group_size
         self.parent_logger = logger
@@ -43,13 +45,22 @@ class MyDownstreamModel(LightningModule):
 
         # trainable params
         in_dim = 512*self.dataloader_group_size
-        self.fc = torch.nn.Sequential(
-            torch.nn.Dropout(0.6),
-            torch.nn.Linear(in_dim, 512),
-            torch.nn.Dropout(0.6),
-            torch.nn.Linear(512, self.num_classes),
-            # torch.nn.Sigmoid(),
-        )
+        if self.use_dropout:
+            self.fc = torch.nn.Sequential(
+                torch.nn.Dropout(0.6),
+                torch.nn.Linear(in_dim, 512),
+                torch.nn.Dropout(0.6),
+                torch.nn.Linear(512, self.num_classes),
+                # torch.nn.Sigmoid(),
+            )
+        else:
+            self.fc = torch.nn.Sequential(
+                # torch.nn.Dropout(0.6),
+                torch.nn.Linear(in_dim, 512),
+                # torch.nn.Dropout(0.6),
+                torch.nn.Linear(512, self.num_classes),
+                # torch.nn.Sigmoid(),
+            )
         self.criteria = torch.nn.BCEWithLogitsLoss()
         # self.criteria = torch.nn.BCELoss()
 

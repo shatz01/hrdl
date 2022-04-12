@@ -1,5 +1,5 @@
-# ON_SERVER = "DGX"
-ON_SERVER = "haifa"
+ON_SERVER = "DGX"
+# ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -10,6 +10,7 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
+import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 import torchvision
@@ -21,6 +22,7 @@ from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
+pl.seed_everything(42)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fe', type=str, default='myresnet') # lightly or myresnet
@@ -28,7 +30,7 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=1)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--freeze_backbone', type=bool, default=False)
-parser.add_argument('--num_epochs', type=int, default=240)
+parser.add_argument('--num_epochs', type=int, default=2000)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
 args = parser.parse_args()
 
@@ -38,7 +40,8 @@ hypers_dict = {
         # /workspace/repos/hrdl/saved_models/moco/{EXP_NAME}
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=8-MOCO_train_loss_ssl=4.75.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
-        "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
+        # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
+        "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
         # "fe": "lightly",
         "fe": args.fe,
         "data_dir": data_dir,
@@ -59,7 +62,8 @@ eps = hypers_dict["num_epochs"]
 lr = hypers_dict["learning_rate"]
 freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
-EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}_fromssl2.20"
+lr = hypers_dict["learning_rate"]
+EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}_fromssl2.09_noDropout"
 
 # logger
 logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)

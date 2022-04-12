@@ -1,5 +1,5 @@
-# ON_SERVER = "DGX"
-ON_SERVER = "haifa"
+ON_SERVER = "DGX"
+# ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -18,6 +18,8 @@ import argparse
 from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.model_stuff.MyResNet import MyResNet
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
+
+pl.seed_everything(42)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=32)
