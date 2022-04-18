@@ -69,6 +69,8 @@ class PatientLevelValidation(pl.Callback):
         # fill dict
         with torch.no_grad():
             for img_id, patch_path, patch_score, patch_target in zip(batch_img_ids, batch_paths, batch_scores, batch_targets):
+                if img_samples_score_dict[img_id][patch_path] is not None:
+                    import pdb; pdb.set_trace()
                 img_samples_score_dict[img_id][patch_path] = patch_score
 
 

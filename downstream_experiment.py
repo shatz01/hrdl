@@ -1,5 +1,5 @@
-ON_SERVER = "DGX"
-# ON_SERVER = "haifa"
+# ON_SERVER = "DGX"
+ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -7,7 +7,8 @@ if ON_SERVER=="DGX":
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
-    data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
+    data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
+    # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
 import pytorch_lightning as pl
@@ -41,7 +42,8 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=8-MOCO_train_loss_ssl=4.75.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
-        "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
+        # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
+        "model_loc": None,
         # "fe": "lightly",
         "fe": args.fe,
         "data_dir": data_dir,
@@ -63,10 +65,10 @@ lr = hypers_dict["learning_rate"]
 freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
 lr = hypers_dict["learning_rate"]
-EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}_fromssl2.09_noDropout"
+EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}"
 
 # logger
-logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
