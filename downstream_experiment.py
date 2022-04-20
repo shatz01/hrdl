@@ -11,7 +11,7 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
-    data_dir = "/home/shats/data/tcga_data_formatted/"
+    data_dir = "/tcmldrive/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
@@ -72,7 +72,7 @@ freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
 lr = hypers_dict["learning_rate"]
 drpout = hypers_dict["use_dropout"]
-EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{use_drpout}_freeze{freeze}"
+EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}"
 
 # logger
 logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
