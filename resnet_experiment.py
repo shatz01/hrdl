@@ -1,5 +1,6 @@
-ON_SERVER = "DGX"
+# ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -8,8 +9,12 @@ if ON_SERVER=="DGX":
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
+elif ON_SERVER=="alsx2":
+    data_dir = "/home/shats/data/tcga_data_formatted/"
+    # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch
+import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 import argparse
@@ -42,7 +47,7 @@ bs = hypers_dict["batch_size"]
 EXP_NAME = f"Resnet_BASELINE_gs{gs}_bs{bs}"
 
 # logger
-logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # model

@@ -1,5 +1,6 @@
 # ON_SERVER = "DGX"
-ON_SERVER = "haifa"
+# ON_SERVER = "haifa"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -8,6 +9,9 @@ if ON_SERVER=="DGX":
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
+    # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
+elif ON_SERVER=="alsx2":
+    data_dir = "/home/shats/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 import torch

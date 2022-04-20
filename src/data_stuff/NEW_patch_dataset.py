@@ -34,11 +34,20 @@ class PatchDataset(Dataset):
         self.group_size = group_size 
 
         self.samples, self.class_to_idx = self.make_dataset()
+        self.remove_images_with_few_patches(self.group_size, self.samples)
         self.grouped_samples = self.group_dataset(self.samples, self.group_size)
 
         # to check for dataset reloading
         self.random_id_state = random.randrange(30)
         print(self.random_id_state)
+
+    def remove_images_with_few_patches(self, min_patches, dataset_dict):
+        for k in dataset_dict.copy().keys():
+            num_patches = len(dataset_dict[k][0])
+            if num_patches < min_patches:
+                dataset_dict.pop(k, None)
+                print(f"Removed {k}, {num_patches} patches")
+        
 
     def make_dataset(self):
         """
