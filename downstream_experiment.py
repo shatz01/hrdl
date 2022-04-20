@@ -37,6 +37,7 @@ parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--freeze_backbone', type=bool, default=False)
 parser.add_argument('--num_epochs', type=int, default=2000)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
+parser.add_argument('--use_dropout', type=bool, default=False)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -57,7 +58,8 @@ hypers_dict = {
         "freeze_backbone": args.freeze_backbone,
         "memory_bank_size": 4096,
         "moco_max_epochs": 250,
-        "num_epochs": args.num_epochs
+        "num_epochs": args.num_epochs,
+        "use_dropout": args.use_dropout,
         }
 # ------------- #
 
@@ -69,7 +71,8 @@ lr = hypers_dict["learning_rate"]
 freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
 lr = hypers_dict["learning_rate"]
-EXP_NAME = f"downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_freeze{freeze}"
+drpout = hypers_dict["use_dropout"]
+EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{use_drpout}_freeze{freeze}"
 
 # logger
 logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
@@ -84,7 +87,7 @@ if args.load_checkpoint:
 else:
     model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"])
 backbone = model.feature_extractor.backbone
-model = MyDownstreamModel(backbone=backbone, lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"])
+model = MyDownstreamModel(backbone=backbone, lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"])
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])
