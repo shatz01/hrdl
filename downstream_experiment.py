@@ -1,8 +1,9 @@
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
+    # data_dir = "/workspace/repos/data/tcga_data_formatted/"
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
@@ -38,6 +39,8 @@ parser.add_argument('--freeze_backbone', type=bool, default=False)
 parser.add_argument('--num_epochs', type=int, default=2000)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
 parser.add_argument('--use_dropout', type=bool, default=False)
+parser.add_argument('--num_FC', type=int, default=2)
+parser.add_argument('--use_LRa', type=bool, default=False)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -60,6 +63,8 @@ hypers_dict = {
         "moco_max_epochs": 250,
         "num_epochs": args.num_epochs,
         "use_dropout": args.use_dropout,
+        "num_FC": args.num_FC,
+        "use_LRa": args.use_LRa, # learning rate annealing
         }
 # ------------- #
 
@@ -72,10 +77,12 @@ freeze = hypers_dict["freeze_backbone"]
 fe = hypers_dict["fe"]
 lr = hypers_dict["learning_rate"]
 drpout = hypers_dict["use_dropout"]
-EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}"
+nFC = hypers_dict["num_FC"]
+LRa = hypers_dict["use_LRa"]
+EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_LRa{LRa}"
 
 # logger
-logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
@@ -87,7 +94,7 @@ if args.load_checkpoint:
 else:
     model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"])
 backbone = model.feature_extractor.backbone
-model = MyDownstreamModel(backbone=backbone, lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"])
+model = MyDownstreamModel(backbone=backbone, lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"], num_FC=hypers_dict["num_FC"], use_LRa=hypers_dict["use_LRa"])
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])

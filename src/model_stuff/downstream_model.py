@@ -16,13 +16,15 @@ from src.model_stuff.MyResNet import MyResNet
 import re
 
 class MyDownstreamModel(LightningModule):
-    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly", use_dropout=False):
+    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly", use_dropout=False, num_FC=2, use_LRa=False):
         super().__init__()
         self.num_classes=num_classes
         self.log_everything = log_everything
         self.lr = lr
         self.fe = fe # CAN BE lightly or myresnet
         self.use_dropout = use_dropout
+        self.num_FC = num_FC
+        self.use_LRa = use_LRa
         # self.save_hyperparameters()
 
         # just pass the feature extractor
@@ -45,7 +47,7 @@ class MyDownstreamModel(LightningModule):
 
         # trainable params
         in_dim = 512*self.dataloader_group_size
-        if self.use_dropout:
+        if self.use_dropout and self.num_FC==2:
             self.fc = torch.nn.Sequential(
                 torch.nn.Dropout(0.6),
                 torch.nn.Linear(in_dim, 512),
@@ -53,13 +55,17 @@ class MyDownstreamModel(LightningModule):
                 torch.nn.Linear(512, self.num_classes),
                 # torch.nn.Sigmoid(),
             )
-        else:
+        elif (not self.use_dropout and self.num_FC==2):
             self.fc = torch.nn.Sequential(
                 # torch.nn.Dropout(0.6),
                 torch.nn.Linear(in_dim, 512),
                 # torch.nn.Dropout(0.6),
                 torch.nn.Linear(512, self.num_classes),
                 # torch.nn.Sigmoid(),
+            )
+        elif self.num_FC==1:
+            self.fc = torch.nn.Sequential(
+                torch.nn.Linear(in_dim, self.num_classes),
             )
         self.criteria = torch.nn.BCEWithLogitsLoss()
         # self.criteria = torch.nn.BCELoss()
@@ -159,4 +165,10 @@ class MyDownstreamModel(LightningModule):
         self.downstream_val_accs.append(float(mean_val_acc))
         
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), self.lr)
+        if not self.use_LRa:
+            optim = torch.optim.Adam(self.parameters(), self.lr)
+            return optim
+        else:
+            optim = torch.optim.Adam(self.parameters(), self.lr)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.moco_max_epochs)
+            return [optim], [scheduler]

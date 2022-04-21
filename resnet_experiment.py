@@ -1,6 +1,6 @@
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
@@ -47,7 +47,7 @@ bs = hypers_dict["batch_size"]
 EXP_NAME = f"Resnet_BASELINE_gs{gs}_bs{bs}"
 
 # logger
-logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # model
