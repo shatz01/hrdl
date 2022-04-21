@@ -16,7 +16,7 @@ from src.model_stuff.MyResNet import MyResNet
 import re
 
 class MyDownstreamModel(LightningModule):
-    def __init__(self, backbone, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly", use_dropout=False, num_FC=2, use_LRa=False):
+    def __init__(self, backbone, max_epochs, lr=1e-4, num_classes=2, logger=None, dataloader_group_size=6, log_everything=False, freeze_backbone=True, fe="lightly", use_dropout=False, num_FC=2, use_LRa=False):
         super().__init__()
         self.num_classes=num_classes
         self.log_everything = log_everything
@@ -170,5 +170,5 @@ class MyDownstreamModel(LightningModule):
             return optim
         else:
             optim = torch.optim.Adam(self.parameters(), self.lr)
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.moco_max_epochs)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, )
             return [optim], [scheduler]
