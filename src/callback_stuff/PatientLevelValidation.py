@@ -81,14 +81,16 @@ class PatientLevelValidation(pl.Callback):
         """
         # eval and record results
         if not trainer.sanity_checking:
-            train_rawsum_acc, train_majority_vote_acc = self.score_dict(self.train_img_samples_score_dict, self.train_samples_dict)
-            val_rawsum_acc, val_majority_vote_acc = self.score_dict(self.val_img_samples_score_dict, self.val_samples_dict)
+            train_rawsum_acc, train_majority_vote_acc, train_percent_class_1 = self.score_dict(self.train_img_samples_score_dict, self.train_samples_dict)
+            val_rawsum_acc, val_majority_vote_acc, val_percent_class_1 = self.score_dict(self.val_img_samples_score_dict, self.val_samples_dict)
 
             self.log('train_rawsum_acc', train_rawsum_acc, on_step=False, on_epoch=True)
             self.log('train_majority_vote_acc', train_majority_vote_acc, on_step=False, on_epoch=True)
+            self.log('train_percent_class_1', train_percent_class_1, on_step=False, on_epoch=True)
 
             self.log('val_rawsum_acc', val_rawsum_acc, on_step=False, on_epoch=True)
             self.log('val_majority_vote_acc', val_majority_vote_acc, on_step=False, on_epoch=True)
+            self.log('val_percent_class_1', val_percent_class_1, on_step=False, on_epoch=True)
 
         # refresh dicts
         self.train_samples_dict = trainer.datamodule.train_ds.get_samples_dict()
@@ -132,6 +134,8 @@ class PatientLevelValidation(pl.Callback):
         rawsum_acc = torchmetrics.functional.accuracy(y_hat_rawsum.cpu(), y)
         majority_vote_acc = torchmetrics.functional.accuracy(y_hat_majority_vote.cpu(), y)
 
-        return rawsum_acc, majority_vote_acc
+        percent_class_1 = sum(y_hat_majority_vote)/len(y_hat_majority_vote)
+
+        return rawsum_acc, majority_vote_acc, percent_class_1
 
 

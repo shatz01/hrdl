@@ -1,6 +1,6 @@
-ON_SERVER = "DGX"
+# ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-# ON_SERVER = "alsx2"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     # data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -82,7 +82,8 @@ LRa = hypers_dict["use_LRa"]
 EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_LRa{LRa}"
 
 # logger
-logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
+# logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
@@ -94,7 +95,7 @@ if args.load_checkpoint:
 else:
     model = MocoModel(hypers_dict["memory_bank_size"], hypers_dict["moco_max_epochs"])
 backbone = model.feature_extractor.backbone
-model = MyDownstreamModel(backbone=backbone, max_epochs=hypers_dict["num_epochs"] lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"], num_FC=hypers_dict["num_FC"], use_LRa=hypers_dict["use_LRa"])
+model = MyDownstreamModel(backbone=backbone, max_epochs=hypers_dict["num_epochs"], lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"], num_FC=hypers_dict["num_FC"], use_LRa=hypers_dict["use_LRa"])
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])
