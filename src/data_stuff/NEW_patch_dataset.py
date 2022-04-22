@@ -107,6 +107,8 @@ class PatchDataset(Dataset):
                 if None not in image_list:
                     individual_sample = (image_id, ",".join(image_list), label)
                     grouped_dataset.append(individual_sample)
+                else: # None is there
+                    import pdb; pdb.set_trace()
         return grouped_dataset
             
 

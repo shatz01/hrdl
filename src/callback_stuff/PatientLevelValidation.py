@@ -3,9 +3,12 @@ import pytorch_lightning as pl
 import torch
 import torchmetrics
 import numpy as np
+import pandas as pd
+import wandb
+from torchvision.utils import save_image
 
 class PatientLevelValidation(pl.Callback):
-    def __init__(self, group_size: int, debug_mode = True) -> None:
+    def __init__(self, group_size: int, debug_mode = False) -> None:
 
         print(f"Patient Level Eval initialized with group size {group_size}")
         # self.train_eval_dict = defaultdict(list)
@@ -34,6 +37,15 @@ class PatientLevelValidation(pl.Callback):
             y = y.repeat_interleave(self.group_size)
             batch_outputs = batch_outputs.repeat_interleave(self.group_size, axis=0)
             img_id = tuple(np.repeat(np.array(img_id), self.group_size))
+            if self.debug_mode:
+                for p in img_paths:
+                    if p == "/tcmldrive/tcga_data_formatted/train/MSS/TCGA-AF-6655/blk-YYDEFDMRGTTP-TCGA-AF-6655-01Z-00-DX1.png":
+                        # if p == "/tcmldrive/tcga_data_formatted/train/MSS/TCGA-SS-A7HO/blk-YFWIFFLIFPTE-TCGA-SS-A7HO-01Z-00-DX1.png":
+                        p_idx = img_paths.index(p)
+                        x = x.view(x.shape[0]*x.shape[1], *x.shape[2:])
+                        p_img = x[p_idx]
+                        # save_image(p_img, f"/home/shats/stupid_test/img_idx{p_idx}_r{np.random.randint(50)}.png")
+                        print("--- img saved@@@ ---")
         elif self.group_size==1:
             img_paths = list(img_paths[0])
 
@@ -91,6 +103,10 @@ class PatientLevelValidation(pl.Callback):
             self.log('val_rawsum_acc', val_rawsum_acc, on_step=False, on_epoch=True)
             self.log('val_majority_vote_acc', val_majority_vote_acc, on_step=False, on_epoch=True)
             self.log('val_percent_class_1', val_percent_class_1, on_step=False, on_epoch=True)
+
+            # log dicts
+            # import pdb; pdb.set_trace()
+            # wandb.Table(dataframe=pd.DataFrame(self.train_samples_dict))
 
         # refresh dicts
         self.train_samples_dict = trainer.datamodule.train_ds.get_samples_dict()
