@@ -3,7 +3,8 @@ ON_SERVER = "DGX"
 # ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
-    data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
+    data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
@@ -29,7 +30,7 @@ pl.seed_everything(42)
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=1)
-parser.add_argument('--num_epochs', type=int, default=240)
+parser.add_argument('--num_epochs', type=int, default=2000)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -44,10 +45,11 @@ hypers_dict = {
 # make experiment name
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"Resnet_BASELINE_gs{gs}_bs{bs}"
+EXP_NAME = f"Resnet_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
 
 # logger
-logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
+# logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # model

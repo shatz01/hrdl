@@ -1,10 +1,10 @@
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
-    # data_dir = "/workspace/repos/data/tcga_data_formatted/"
-    data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
+    data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
@@ -51,7 +51,8 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
-        "model_loc": None,
+        "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt",
+        # "model_loc": None,
         # "fe": "lightly",
         "fe": args.fe,
         "data_dir": data_dir,
