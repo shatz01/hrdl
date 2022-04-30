@@ -2,16 +2,12 @@
 # srun --pty --nodes=2 --gres=gpu:1 --container-image ~/nvidia+pytorch+21.11-py3.sqsh --container-mounts ~/repos/:/workspace/repos/ python /workspace/repos/hrdl/moco_experiment.py --num_gpus=1 --num_nodes=2 --strat=ddp
 
 
-
-
-
-
-
 ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
 
 if ON_SERVER=="DGX":
-    data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
+    data_dir = "/workspace/repos/TCGA/data/"
+    # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
@@ -34,7 +30,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--num_epochs', type=int, default=700)
+    parser.add_argument('--num_epochs', type=int, default=800)
     parser.add_argument('--num_gpus', type=int, default=1)
     parser.add_argument('--num_nodes', type=int, default=1)
     parser.add_argument('--strat', type=str, default=None) # dp or ddp

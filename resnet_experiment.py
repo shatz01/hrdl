@@ -1,3 +1,4 @@
+print("-- python script started --")
 ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
 # ON_SERVER = "alsx2"
@@ -13,6 +14,8 @@ elif ON_SERVER=="haifa":
 elif ON_SERVER=="alsx2":
     data_dir = "/home/shats/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
+
+print(f"🚙 Starting Resnet Experiment on {ON_SERVER}! 🚗")
 
 import torch
 import pytorch_lightning as pl
@@ -46,6 +49,7 @@ hypers_dict = {
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
 EXP_NAME = f"Resnet_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
+print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)

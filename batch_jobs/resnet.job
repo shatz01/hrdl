@@ -1,0 +1,11 @@
+#!/bin/bash -l
+
+# SLURM SUBMIT SCRIPT
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:1
+##SBATCH --time=0-00:10:00
+
+# run script from above
+echo "... Starting Resnet Job!"
+srun --container-image ~/work/nvidia+pytorch+21.11-py3.sqsh --container-mounts ~/work/repos/:/workspace/repos/ python /workspace/repos/hrdl/resnet_experiment.py --batch_size=1
+echo "... Resnet Job Completed!"
