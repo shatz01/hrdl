@@ -34,6 +34,7 @@ class PatchDataset(Dataset):
         self.group_size = group_size 
 
         self.samples, self.class_to_idx = self.make_dataset()
+        print(f"🏛  -- class to index: {self.class_to_idx}")
         self.remove_images_with_few_patches(self.group_size, self.samples)
         self.grouped_samples = self.group_dataset(self.samples, self.group_size)
 

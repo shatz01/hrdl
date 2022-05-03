@@ -150,7 +150,7 @@ class PatientLevelValidation(pl.Callback):
         rawsum_acc = torchmetrics.functional.accuracy(y_hat_rawsum.cpu(), y)
         majority_vote_acc = torchmetrics.functional.accuracy(y_hat_majority_vote.cpu(), y)
 
-        percent_class_1 = sum(y_hat_majority_vote)/len(y_hat_majority_vote)
+        percent_class_1 = 1-sum(y_hat_majority_vote)/len(y_hat_majority_vote)
 
         return rawsum_acc, majority_vote_acc, percent_class_1
 

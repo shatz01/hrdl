@@ -7,5 +7,5 @@
 
 # run script from above
 echo "... Starting Resnet Job!"
-srun --container-image ~/work/nvidia+pytorch+21.11-py3.sqsh --container-mounts ~/work/repos/:/workspace/repos/ python /workspace/repos/hrdl/resnet_experiment.py --batch_size=1
+srun --container-image ~/work/nvidia+pytorch+21.11-py3.sqsh --container-mounts ~/work/repos/:/workspace/repos/ python /workspace/repos/hrdl/resnet_experiment.py --batch_size=16
 echo "... Resnet Job Completed!"
