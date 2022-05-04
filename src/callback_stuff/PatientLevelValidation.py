@@ -16,11 +16,17 @@ class PatientLevelValidation(pl.Callback):
         self.all_patient_targets = {}
         self.group_size = group_size
         self.debug_mode = debug_mode
+        self.MSIMUT_label = None
 
     def setup(self, trainer, pl_module, stage=None):
         # we need the following dicts to check for label corectness
         self.train_samples_dict = trainer.datamodule.train_ds.get_samples_dict()
         self.val_samples_dict = trainer.datamodule.val_ds.get_samples_dict()
+
+        try:
+            self.MSIMUT_label = trainer.datamodule.train_ds.class_to_idx["MSIMUT"]
+        except:
+            pass
 
         # we need these dicts to fill with patch scores
         self.train_img_samples_score_dict = trainer.datamodule.train_ds.get_img_samples_score_dict()
@@ -98,11 +104,11 @@ class PatientLevelValidation(pl.Callback):
 
             self.log('train_rawsum_acc', train_rawsum_acc, on_step=False, on_epoch=True)
             self.log('train_majority_vote_acc', train_majority_vote_acc, on_step=False, on_epoch=True)
-            self.log('train_percent_class_1', train_percent_class_1, on_step=False, on_epoch=True)
+            self.log('train_percent_class_MSIMUT', train_percent_class_1, on_step=False, on_epoch=True)
 
             self.log('val_rawsum_acc', val_rawsum_acc, on_step=False, on_epoch=True)
             self.log('val_majority_vote_acc', val_majority_vote_acc, on_step=False, on_epoch=True)
-            self.log('val_percent_class_1', val_percent_class_1, on_step=False, on_epoch=True)
+            self.log('val_percent_class_MSIMUT', val_percent_class_1, on_step=False, on_epoch=True)
 
             # log dicts
             # import pdb; pdb.set_trace()
@@ -149,9 +155,11 @@ class PatientLevelValidation(pl.Callback):
 
         rawsum_acc = torchmetrics.functional.accuracy(y_hat_rawsum.cpu(), y)
         majority_vote_acc = torchmetrics.functional.accuracy(y_hat_majority_vote.cpu(), y)
+        
 
-        percent_class_1 = 1-sum(y_hat_majority_vote)/len(y_hat_majority_vote)
+        percent_class_MSIMUT = sum(y_hat_majority_vote==self.MSIMUT_label)/len(y_hat_majority_vote)
+        # percent_class_MSIMUT = 1-sum(y_hat_majority_vote)/len(y_hat_majority_vote)
 
-        return rawsum_acc, majority_vote_acc, percent_class_1
+        return rawsum_acc, majority_vote_acc, percent_class_MSIMUT
 
 

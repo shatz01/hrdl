@@ -1,6 +1,7 @@
-ON_SERVER = "DGX"
+print("-- python script started --")
+# ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-# ON_SERVER = "alsx2"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -14,6 +15,8 @@ elif ON_SERVER=="haifa":
 elif ON_SERVER=="alsx2":
     data_dir = "/tcmldrive/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
+
+print(f"🚙 Starting Downstream Experiment on {ON_SERVER}! 🚗")
 
 import torch
 import pytorch_lightning as pl
@@ -31,16 +34,17 @@ from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 pl.seed_everything(42)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fe', type=str, default='myresnet') # lightly or myresnet
+parser.add_argument('--fe', type=str, default='lightly') # lightly or myresnet
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=1)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
-parser.add_argument('--freeze_backbone', type=bool, default=False)
+parser.add_argument('--freeze_backbone', type=bool, default=True)
 parser.add_argument('--num_epochs', type=int, default=2000)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
 parser.add_argument('--use_dropout', type=bool, default=False)
 parser.add_argument('--num_FC', type=int, default=2)
 parser.add_argument('--use_LRa', type=bool, default=False)
+parser.add_argument('--num_workers', type=int, default=8)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -51,7 +55,9 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
-        "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt",
+        # "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt",
+        # "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
+        "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
         # "model_loc": None,
         # "fe": "lightly",
         "fe": args.fe,
@@ -66,6 +72,7 @@ hypers_dict = {
         "use_dropout": args.use_dropout,
         "num_FC": args.num_FC,
         "use_LRa": args.use_LRa, # learning rate annealing
+        "num_workers": args.num_workers,
         }
 # ------------- #
 
@@ -81,14 +88,24 @@ drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
 EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_LRa{LRa}"
+print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+# logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
 lr_monitor = LearningRateMonitor(logging_interval='step')
+checkpoint_callback = ModelCheckpoint(
+    dirpath=f'./saved_models/downstream/{EXP_NAME}',
+    filename='{epoch}-{val_majority_vote_acc:.2f}-{val_acc_epoch}',
+    save_top_k=3,
+    verbose=True,
+    monitor='val_majority_vote_acc',
+    mode='max'
+)
 
 # model
 if args.load_checkpoint:
@@ -99,7 +116,7 @@ backbone = model.feature_extractor.backbone
 model = MyDownstreamModel(backbone=backbone, max_epochs=hypers_dict["num_epochs"], lr=hypers_dict["learning_rate"], num_classes=2, logger=logger, dataloader_group_size=hypers_dict["group_size"], log_everything=True, freeze_backbone=hypers_dict["freeze_backbone"], fe=hypers_dict["fe"], use_dropout=hypers_dict["use_dropout"], num_FC=hypers_dict["num_FC"], use_LRa=hypers_dict["use_LRa"])
 
 # data
-dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"])
+dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"], num_workers=hypers_dict["num_workers"])
 trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         logger=logger,
         # reload_dataloaders_every_epoch=True,
@@ -107,6 +124,7 @@ trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         callbacks=[
             PatientLevelValidation(group_size=hypers_dict["group_size"], debug_mode=False),
             # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
+            checkpoint_callback 
             ]
         )
 trainer.fit(model, dm)
