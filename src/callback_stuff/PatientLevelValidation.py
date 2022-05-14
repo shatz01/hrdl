@@ -141,9 +141,16 @@ class PatientLevelValidation(pl.Callback):
                 img_yhat = torch.stack(img_yhat)
             except:
                 import pdb; pdb.set_trace()
-            img_yhat_rawsum_logits = torch.sum(img_yhat, dim=0)
             # img_yhat_rawsum_argmax = torch.argmax(img_yhat_rawsum_logits)
-            img_yhat_majority_vote = torch.mode(torch.argmax(img_yhat, dim=1)).values
+            if img_yhat.shape[1] == 2:
+                img_yhat_rawsum_logits = torch.sum(img_yhat, dim=0)
+                img_yhat_majority_vote = torch.mode(torch.argmax(img_yhat, dim=1)).values
+            elif img_yhat.shape[1] == 1: ### REGRESSION CASE
+                img_yhat_rawsum_logits = torch.tensor(0) ### FIX THIS FOR REGRESSION CASE
+                # for the above, intuition says to sigmoid them, and then just check if average is greater or less than 0.5
+                img_yhat_majority_vote = torch.mode((torch.nn.functional.sigmoid(img_yhat)>0.5).type(torch.uint8).squeeze(-1)).values
+            else:
+                print("ERROR!!! NO fucking idea what is going on!")
             y.append(img_y)
             y_hat_rawsum.append(img_yhat_rawsum_logits)
             y_hat_majority_vote.append(img_yhat_majority_vote)
@@ -156,7 +163,6 @@ class PatientLevelValidation(pl.Callback):
         rawsum_acc = torchmetrics.functional.accuracy(y_hat_rawsum.cpu(), y)
         majority_vote_acc = torchmetrics.functional.accuracy(y_hat_majority_vote.cpu(), y)
         
-
         percent_class_MSIMUT = sum(y_hat_majority_vote==self.MSIMUT_label)/len(y_hat_majority_vote)
         # percent_class_MSIMUT = 1-sum(y_hat_majority_vote)/len(y_hat_majority_vote)
 

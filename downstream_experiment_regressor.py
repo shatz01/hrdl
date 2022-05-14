@@ -10,13 +10,13 @@ if ON_SERVER=="DGX":
     from src.data_stuff.pip_tools import install
     install(["pytorch-lightning", "albumentations", "seaborn", "timm", "wandb", "plotly", "lightly"], quietly=True)
 elif ON_SERVER=="haifa":
-    data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
+    # data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
     data_dir = "/tcmldrive/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
-print(f"🚙 Starting Downstream Experiment on {ON_SERVER}! 🚗")
+print(f"🚙 Starting Downstream Experiment Regressor on {ON_SERVER}! 🚗")
 
 import torch
 import pytorch_lightning as pl
@@ -26,7 +26,7 @@ import torchvision
 import argparse
 
 from src.model_stuff.moco_model import MocoModel
-from src.model_stuff.downstream_model import MyDownstreamModel
+from src.model_stuff.downstream_model_regressor import MyDownstreamModel
 from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
@@ -45,7 +45,6 @@ parser.add_argument('--use_dropout', type=bool, default=False)
 parser.add_argument('--num_FC', type=int, default=2)
 parser.add_argument('--use_LRa', type=bool, default=False)
 parser.add_argument('--num_workers', type=int, default=8)
-parser.add_argument('--num_out_neurons', type=int, default=2)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -74,7 +73,6 @@ hypers_dict = {
         "num_FC": args.num_FC,
         "use_LRa": args.use_LRa, # learning rate annealing
         "num_workers": args.num_workers,
-        "num_out_neurons": args.num_out_neurons,
         }
 # ------------- #
 
@@ -89,8 +87,7 @@ lr = hypers_dict["learning_rate"]
 drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
-num_out_neurons = hypers_dict["num_out_neurons"]
-EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
+EXP_NAME = f"{ON_SERVER}_downstrexpREGRESSOR_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
@@ -102,7 +99,7 @@ logger.experiment.config.update(hypers_dict)
 # monitors
 lr_monitor = LearningRateMonitor(logging_interval='step')
 checkpoint_callback = ModelCheckpoint(
-    dirpath=f'./saved_models/downstream/{EXP_NAME}',
+    dirpath=f'./saved_models/downstream_regressor/{EXP_NAME}',
     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
     save_top_k=3,
     verbose=True,
@@ -136,7 +133,7 @@ model = MyDownstreamModel(
         use_dropout=hypers_dict["use_dropout"],
         num_FC=hypers_dict["num_FC"],
         use_LRa=hypers_dict["use_LRa"],
-        num_out_neurons=hypers_dict["num_out_neurons"])
+        )
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"], num_workers=hypers_dict["num_workers"])

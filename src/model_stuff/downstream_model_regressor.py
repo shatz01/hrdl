@@ -11,7 +11,7 @@ import torchvision.models as models
 import torchmetrics
 
 # FOR TESTING IF MY RESNET IS BETTER #
-from src.model_stuff.MyResNet import MyResNet
+# from src.model_stuff.MyResNet import MyResNet
 
 import re
 
@@ -47,42 +47,21 @@ class MyDownstreamModel(LightningModule):
 
         # trainable params
         in_dim = 512*self.dataloader_group_size
-        if self.use_dropout and self.num_FC==2:
-            self.fc = torch.nn.Sequential(
-                torch.nn.Dropout(0.6),
-                torch.nn.Linear(in_dim, 512),
-                torch.nn.Dropout(0.6),
-                torch.nn.Linear(512, self.num_classes),
-                # torch.nn.Sigmoid(),
-            )
-        elif (not self.use_dropout and self.num_FC==2):
-            self.fc = torch.nn.Sequential(
-                # torch.nn.Dropout(0.6),
-                torch.nn.Linear(in_dim, 512),
-                # torch.nn.Dropout(0.6),
-                torch.nn.Linear(512, self.num_classes),
-                # torch.nn.Sigmoid(),
-            )
-        elif self.num_FC==1:
-            self.fc = torch.nn.Sequential(
-                torch.nn.Linear(in_dim, self.num_classes),
-            )
+        # if self.use_dropout and self.num_FC==2:
+        self.fc = torch.nn.Sequential(
+            torch.nn.Dropout(0.6),
+            torch.nn.Linear(in_dim, 512),
+            torch.nn.Dropout(0.6),
+            torch.nn.Linear(512, 1),
+            # torch.nn.Sigmoid(),
+        )
         self.criteria = torch.nn.BCEWithLogitsLoss()
-        # self.criteria = torch.nn.BCELoss()
 
         # for logging
-        # self.downstream_val_accs_table = downstream_val_accs_table
-        # self.full_run_train_acc_record = full_run_train_acc_record
         self.downstream_val_losses = [] # avg per epoch
         self.downstream_val_accs = [] # avg per epoch
         self.downstream_train_losses = []
         self.downstream_train_accs = [] # avg per epoch
-
-
-    # overload logging so that it logs with the logger used for the 
-    # trained feature extractor
-    # def log(name, value, on_step, on_epoch):
-    #    return self.parent_logger.log(name, value, on_step=on_step, on_epoch=on_epoch)
 
     def extract_features(self, x):
         x = self.feature_extractor(x)
@@ -110,11 +89,10 @@ class MyDownstreamModel(LightningModule):
         
         out = self(x)
 
-        loss = self.criteria(out, torch.nn.functional.one_hot(y, self.num_classes).float())
-        acc = torchmetrics.functional.accuracy(torch.argmax(out, dim=1), y)
-        loss = loss.unsqueeze(dim=-1)
+        loss = self.criteria(out.squeeze(-1), y.float())
+        out_binarized = (torch.nn.functional.sigmoid(out) > 0.5).type(torch.uint8)
+        acc = torchmetrics.functional.accuracy(out_binarized, y)
 
-        # , "batch_outputs_downstream": out.clone().detach()}
         if self.log_everything:
             self.log("train_loss", loss, on_step=True, on_epoch=True)
             self.log('train_acc', acc, on_step=True, on_epoch=True)
@@ -126,15 +104,14 @@ class MyDownstreamModel(LightningModule):
 
         out = self(x)
 
-        val_loss = self.criteria(out, torch.nn.functional.one_hot(y.long(), self.num_classes).float())
-        val_acc = torchmetrics.functional.accuracy(torch.argmax(out, dim=1), y)
+        val_loss = self.criteria(out.squeeze(-1), y.float())
+        out_binarized = (torch.nn.functional.sigmoid(out) > 0.5).type(torch.uint8)
+        val_acc = torchmetrics.functional.accuracy(out_binarized, y)
+
         if self.log_everything:
             self.log('val_loss', val_loss, on_step=True, on_epoch=True)
             self.log('val_acc', val_acc, on_step=True, on_epoch=True)
-        val_loss = val_loss.unsqueeze(dim=-1)
-        del batch
 
-        #, "batch_outputs_downstream": out.clone().detach()}
         return {"val_loss_downstream": val_loss.detach(), "val_acc_downstream": val_acc.detach(), "batch_outputs": out.clone().detach()}
 
     def get_preds(self, batch):
@@ -142,6 +119,7 @@ class MyDownstreamModel(LightningModule):
         x = x.view(x.shape[0]*x.shape[1], *x.shape[2:])
         x = x.to(self.device)
         out = self(x)
+        out = torch.nn.functional.sigmoid(out)
         return out
 
 

@@ -205,7 +205,7 @@ class PatchDataModule(pl.LightningDataModule):
             torchvision.transforms.Normalize(rgb_mean, rgb_std),
         ])
 
-    def setup(self, stage):
+    def setup(self, stage=None):
         # things to do on every accelerator (distibuted mode)
         # splits, etc
         self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
