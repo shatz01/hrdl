@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from itertools import zip_longest
 from PIL import Image
 import random
+import copy
 """
 
 This file contains both a torch dataset as well as a pytorch lightning datamodule (below)
@@ -162,7 +163,7 @@ class PatchDataset(Dataset):
             img_samples_score_dict[img_id] = {}
             for sample_path in self.samples[img_id][0]: # 0 bc self.samples["img432"] = tup([list/of, pathss/], label(0))
                 img_samples_score_dict[img_id][sample_path] = None
-        return img_samples_score_dict
+        return copy.deepcopy(img_samples_score_dict)
 
 
 ########################## Done Dataset. Datamodule below ##################################
