@@ -28,6 +28,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 import torchvision
 import argparse
+import numpy as np
 
 # from rich.progress import track
 from tqdm import tqdm
@@ -52,14 +53,14 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 
-def make_plot_matplotlib(record_dict):
+def make_plot_matplotlib_sample_level(record_dict):
     plt.figure()
     lw = 2
     for model_name in record_dict.keys():
-        print(f"📊 Plotting {model_name} ...")
-        fpr = record_dict[model_name]['fpr']
-        tpr =  record_dict[model_name]['tpr']
-        auc_score = record_dict[model_name]['auc']
+        print(f"📊 Plotting {model_name} patch level ...")
+        fpr = record_dict[model_name]['sample_fpr']
+        tpr =  record_dict[model_name]['sample_tpr']
+        auc_score = record_dict[model_name]['sample_auc']
 
         plt.plot(
             fpr,
@@ -73,6 +74,31 @@ def make_plot_matplotlib(record_dict):
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.title("ROC Regression Head, Patch Level")
+    plt.legend(loc="lower right")
+    plt.savefig("tmp_plt.png")
+    wandb.log({"img": wandb.Image('tmp_plt.png')})
+
+def make_plot_matplotlib_image_level(record_dict):
+    plt.figure()
+    lw = 2
+    for model_name in record_dict.keys():
+        print(f"📊 Plotting {model_name} Image level ...")
+        fpr = record_dict[model_name]['img_fpr']
+        tpr =  record_dict[model_name]['img_tpr']
+        auc_score = record_dict[model_name]['img_auc']
+
+        plt.plot(
+            fpr,
+            tpr,
+            lw=lw,
+            label=f"{model_name} (auc = {auc_score:.3f})",
+        )
+    plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.01])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Regression Head, Patient Level")
     plt.legend(loc="lower right")
     plt.savefig("tmp_plt.png")
     wandb.log({"img": wandb.Image('tmp_plt.png')})
@@ -97,9 +123,6 @@ def make_plot_matplotlib(record_dict):
 #     # wandb.log({name:fig})
 
 
-def make_roc_image_level(preds, y_gt):
-    # method 1: sigmoid -> average -> sigmoid -> roc/thresh
-    pass
 
 def get_roc_sample_level(preds, y_gt):
     roc = ROC(pos_label=1)
@@ -113,7 +136,10 @@ def get_roc_image_level(img_samples_score_dict, samples_dict_gt):
     preds = []
     y_gt = []
     for img_id in img_samples_score_dict.keys():
-        all_img_scores = torch.stack([v for v in img_samples_score_dict[img_id].values() if v is not None])
+        try:
+            all_img_scores = torch.stack([v for v in img_samples_score_dict[img_id].values() if v is not None])
+        except:
+            import pdb; pdb.set_trace()
         all_img_scores_sigmoided = torch.sigmoid(all_img_scores)
         all_img_scores_avg = torch.mean(all_img_scores_sigmoided)
         preds.append(all_img_scores_avg)
@@ -147,23 +173,35 @@ def get_preds(model, dm):
     for i, batch in enumerate(tqdm(val_dl)):
         with torch.no_grad():
             img_id, img_paths, y_gt, x = batch
+
             preds =  model.get_preds(batch)
-            all_y_gt.extend(y_gt)
-            all_preds.extend(preds)
 
             if dm.group_size > 1:
                 img_paths_lol = [p.split(",") for p in img_paths]
                 img_paths = [item for sublist in img_paths_lol for item in sublist]
+                preds = preds.repeat_interleave(dm.group_size)
                 y_gt = y_gt.repeat_interleave(dm.group_size)
-                img_id = tuple(np.repeat(np.array(img_id), self.group_size))
+                img_id = tuple(np.repeat(np.array(img_id), dm.group_size))
+                # debug: 
+                # TCGA-AA-3875 is all None
+                spec_id = "TCGA-AA-3875"
+                # for u_img_id in set(img_id):
+                #     if u_img_id not in all_img_ids:
+                #         print(f"New img {u_img_id}")
+                #     if u_img_id == spec_id:
+                #         print("FOUND THE SPECIAL ONE")
+                #         import pdb; pdb.set_trace()
             else:
                 img_paths = list(img_paths[0])
 
+            all_y_gt.extend(y_gt)
+            all_preds.extend(preds)
             all_img_ids.extend(img_id)
             all_img_paths.extend(img_paths)
 
     preds = torch.stack(all_preds).squeeze(-1).cpu()
     y_gt = torch.stack(all_y_gt)
+
     return preds, y_gt, all_img_ids, all_img_paths
 
 ################################# MAIN ################################# 
@@ -183,7 +221,7 @@ def make_roc_main(models, model_names, dms):
             #         }
             }
     # I dont think I need to store thresholds...
-
+    
     for model, model_name, dm in zip(models, model_names, dms):
 
         # for recording patient: [scores,...]
@@ -221,9 +259,9 @@ def make_roc_main(models, model_names, dms):
         record_dict[model_name]['img_tpr'] = tpr
         record_dict[model_name]['img_auc'] = auc_score
         print(f"ROC img level auc: {auc_score}")
-        import pdb; pdb.set_trace()
 
-    make_plot_matplotlib(record_dict)
+    make_plot_matplotlib_sample_level(record_dict)
+    make_plot_matplotlib_image_level(record_dict)
 
 
 
@@ -249,7 +287,7 @@ if __name__ == "__main__":
 
     # wandb init
     EXP_NAME = f"ROC"
-    # wandb.init(project="view_rocs", name=EXP_NAME)
+    wandb.init(project="view_rocs", name=EXP_NAME)
 
     
     # checkpoint dirs
