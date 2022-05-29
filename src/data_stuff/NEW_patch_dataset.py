@@ -7,7 +7,6 @@ from torch.utils.data import Dataset
 from itertools import zip_longest
 from PIL import Image
 import random
-import copy
 """
 
 This file contains both a torch dataset as well as a pytorch lightning datamodule (below)
@@ -100,6 +99,7 @@ class PatchDataset(Dataset):
                             each index follows: (image_id, [list_of_images_with_len_group_size], label )
         """
         grouped_dataset = []
+        grouped_dataset = []
         for image_id in dataset_dict.keys():
             patches_list, label = dataset_dict[image_id]
             #https://stackoverflow.com/questions/1624883/alternative-way-to-split-a-list-into-groups-of-n
@@ -109,8 +109,19 @@ class PatchDataset(Dataset):
                 if None not in image_list:
                     individual_sample = (image_id, ",".join(image_list), label)
                     grouped_dataset.append(individual_sample)
-                # else: # None is there
-                #     import pdb; pdb.set_trace()
+                else: # None is there
+                    # need to get some random random patches to fill the nones
+                    not_none_image_list = []
+                    for img in image_list:
+                        if img is not None:
+                            not_none_image_list.append(img)
+                        else:
+                            random_idx = random.randrange(len(image_list))
+                            random_img = patches_list[random_idx]
+                            not_none_image_list.append(random_img)
+                    not_none_image_list = tuple(not_none_image_list)
+                    individual_sample = (image_id, ",".join(not_none_image_list), label)
+                    grouped_dataset.append(individual_sample)
         return grouped_dataset
             
 
@@ -192,7 +203,6 @@ class PatchDataModule(pl.LightningDataModule):
         # things to do on 1 gpu
 
         rgb_mean = (0.4914, 0.4822, 0.4465)
-        rgb_std = (0.2023, 0.1994, 0.2010)
         self.train_transforms = torchvision.transforms.Compose([
             # torchvision.transforms.RandomCrop(32, padding=4),
             # torchvision.transforms.RandomResizedCrop(size=224, scale=(0.7, 1.0), ratio=(0.8, 1.2)),
