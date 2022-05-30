@@ -50,10 +50,16 @@ class MyDownstreamModel(LightningModule):
                 torch.nn.ReLU(),
                 torch.nn.MaxPool1d(kernel_size=2),
                 )
-        self.fc = torch.nn.Sequential(
-                torch.nn.Linear(252, 252),
-                torch.nn.Linear(252, self.num_classes),
-                )
+        if self.dataloader_group_size == 4:
+            self.fc = torch.nn.Sequential(
+                    torch.nn.Linear(252, 252),
+                    torch.nn.Linear(252, self.num_classes),
+                    )
+        elif self.dataloader_group_size == 8:
+            self.fc = torch.nn.Sequential(
+                    torch.nn.Linear(504, 504),
+                    torch.nn.Linear(504, self.num_classes),
+                    )
         # in_dim = 512*self.dataloader_group_size
         # if self.use_dropout and self.num_FC==2:
         #     self.fc = torch.nn.Sequential(
@@ -106,6 +112,7 @@ class MyDownstreamModel(LightningModule):
         x = self.extract_features(x)
         
         # x = torch.stack(torch.split(x, self.dataloader_group_size)).flatten(1) # bs x features
+        import pdb; pdb.set_trace()
         x = torch.stack(torch.split(x, self.dataloader_group_size)) # bs x gs x features
         x = self.c_blk(x)
         x = torch.flatten(x, 1)
