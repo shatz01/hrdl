@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--num_epochs', type=int, default=800)
+    parser.add_argument('--num_epochs', type=int, default=610)
     parser.add_argument('--num_gpus', type=int, default=1)
     parser.add_argument('--num_nodes', type=int, default=1)
     parser.add_argument('--strat', type=str, default=None) # dp or ddp
@@ -55,11 +55,12 @@ if __name__ == "__main__":
     ngp = hypers_dict["num_gpus"]
     nnodes = hypers_dict["num_nodes"]
     strat = hypers_dict["strat"]
-    EXP_NAME = f"myMOCO_150imgs_bs{bs}_ep{ep}_ngp{ngp}_nnodes{nnodes}_strat{strat}"
+    EXP_NAME = f"myMOCO_150imgs_bs{bs}_ep{ep}_ngp{ngp}_nnodes{nnodes}_strat{strat}_nsplits2"
 
     # logger
     print(f"------------------------------- STARTING {EXP_NAME} ----------")
-    logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
+    # logger=WandbLogger(project="new_moti_imagenette_tesselated", name=EXP_NAME)
+    logger=WandbLogger(project="train_moco", name=EXP_NAME)
     # logger.experiment.config.update(hypers_dict)
 
     # monitors
@@ -80,19 +81,34 @@ if __name__ == "__main__":
             batch_size=hypers_dict["batch_size"], 
             subset_size=None,
             num_workers=8)
-
-    trainer = Trainer(
-            gpus=hypers_dict["num_gpus"], 
-            num_nodes=hypers_dict["num_nodes"],
-            strategy=hypers_dict["strat"],
-            max_epochs=hypers_dict["moco_max_epochs"],
-            logger=logger,
-            callbacks=[
-                lr_monitor,
-                checkpoint_callback,
-                # PatientLevelValidation.PatientLevelValidation(),
-                # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
-                ]
-            )
+    
+    if hypers_dict["strat"] == "horovod":
+        trainer = Trainer(
+                # gpus=hypers_dict["num_gpus"], 
+                # num_nodes=hypers_dict["num_nodes"],
+                strategy=hypers_dict["strat"],
+                max_epochs=hypers_dict["moco_max_epochs"],
+                logger=logger,
+                callbacks=[
+                    lr_monitor,
+                    checkpoint_callback,
+                    # PatientLevelValidation.PatientLevelValidation(),
+                    # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
+                    ]
+                )
+    else:
+        trainer = Trainer(
+                gpus=hypers_dict["num_gpus"], 
+                num_nodes=hypers_dict["num_nodes"],
+                strategy=hypers_dict["strat"],
+                max_epochs=hypers_dict["moco_max_epochs"],
+                logger=logger,
+                callbacks=[
+                    lr_monitor,
+                    checkpoint_callback,
+                    # PatientLevelValidation.PatientLevelValidation(),
+                    # LogConfusionMatrix.LogConfusionMatrix(class_to_idx),
+                    ]
+                )
 
     trainer.fit(embedder, dm)

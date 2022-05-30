@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from itertools import zip_longest
 from PIL import Image
 import random
+import copy
 """
 
 This file contains both a torch dataset as well as a pytorch lightning datamodule (below)
@@ -203,6 +204,7 @@ class PatchDataModule(pl.LightningDataModule):
         # things to do on 1 gpu
 
         rgb_mean = (0.4914, 0.4822, 0.4465)
+        rgb_std = (0.2023, 0.1994, 0.2010)
         self.train_transforms = torchvision.transforms.Compose([
             # torchvision.transforms.RandomCrop(32, padding=4),
             # torchvision.transforms.RandomResizedCrop(size=224, scale=(0.7, 1.0), ratio=(0.8, 1.2)),
@@ -231,7 +233,7 @@ class PatchDataModule(pl.LightningDataModule):
                 num_workers=self.num_workers,
                 shuffle=True,
                 # collate_fn=self.collate_fn,
-                drop_last=False
+                drop_last=True
                 )
         return train_dataloader
 
@@ -243,6 +245,6 @@ class PatchDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
                 shuffle=False,
-                drop_last=False
+                drop_last=True
                 )
         return val_dataloader

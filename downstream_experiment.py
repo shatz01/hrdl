@@ -1,10 +1,11 @@
 print("-- python script started --")
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
-    data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    # data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    data_dir = "/workspace/repos/data/tcga_data_formatted_L16/" ### Patients with more than 16 patches
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
@@ -39,7 +40,7 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=1)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--freeze_backbone', type=bool, default=True)
-parser.add_argument('--num_epochs', type=int, default=2000)
+parser.add_argument('--num_epochs', type=int, default=300)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
 parser.add_argument('--use_dropout', type=bool, default=False)
 parser.add_argument('--num_FC', type=int, default=2)
@@ -56,9 +57,8 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
-        # "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt",
-        # "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
-        "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
+        "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
+        # "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
         # "model_loc": None,
         # "fe": "lightly",
         "fe": args.fe,
@@ -90,13 +90,13 @@ drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
 num_out_neurons = hypers_dict["num_out_neurons"]
-EXP_NAME = f"{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
+EXP_NAME = f"FIXDL_L16_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
-# logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+# logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
@@ -135,8 +135,8 @@ model = MyDownstreamModel(
         fe=hypers_dict["fe"],
         use_dropout=hypers_dict["use_dropout"],
         num_FC=hypers_dict["num_FC"],
-        use_LRa=hypers_dict["use_LRa"],
-        num_out_neurons=hypers_dict["num_out_neurons"])
+        use_LRa=hypers_dict["use_LRa"],)
+        # num_out_neurons=hypers_dict["num_out_neurons"])
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"], num_workers=hypers_dict["num_workers"])

@@ -1,10 +1,11 @@
 print("-- python script started --")
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
-    data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    # data_dir = "/workspace/repos/data/tcga_data_formatted/" ### ALL PATIENTS
+    data_dir = "/workspace/repos/data/tcga_data_formatted_L16/" ### Patients with more than 16 patches
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
@@ -52,13 +53,14 @@ hypers_dict = {
 # make experiment name
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"Resnet_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
+EXP_NAME = f"L16_Resnet_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+# logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitor

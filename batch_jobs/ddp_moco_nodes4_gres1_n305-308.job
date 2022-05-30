@@ -1,0 +1,23 @@
+#!/bin/bash -l
+
+# SLURM SUBMIT SCRIPT
+#SBATCH --nodes=4
+#SBATCH --gres=gpu:1
+#SBATCH --nodelist=n[305-308]
+
+# Not good commands
+# #SBATCH --ntasks-per-node=2
+
+# debugging flags (optional)
+export NCCL_DEBUG=INFO
+export PYTHONFAULTHANDLER=1
+
+# on your cluster you might need these:
+# set the network interface
+export NCCL_SOCKET_IFNAME=^docker0,lo
+
+# might need the latest CUDA
+# module load NCCL/2.4.7-1-cuda.10.0
+
+# run script from above
+srun --container-image ~/work/nvidia+pytorch+21.11-py3.sqsh --container-mounts ~/work/repos/:/workspace/repos/ python /workspace/repos/hrdl/moco_experiment.py --num_nodes=4 --num_gpus=1 --strat=ddp --batch_size=128 --num_epochs=610
