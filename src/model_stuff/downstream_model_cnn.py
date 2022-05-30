@@ -45,8 +45,10 @@ class MyDownstreamModel(LightningModule):
         num_channels = self.dataloader_group_size
         self.c_blk = torch.nn.Sequential(
                 torch.nn.Conv1d(in_channels=num_channels, out_channels=num_channels*2, kernel_size=5, stride=2),
+                torch.nn.BatchNorm1d(num_channels*2),
                 torch.nn.ReLU(),
                 torch.nn.Conv1d(in_channels=num_channels*2, out_channels=num_channels, kernel_size=3, stride=2),
+                torch.nn.BatchNorm1d(num_channels),
                 torch.nn.ReLU(),
                 torch.nn.MaxPool1d(kernel_size=2),
                 )
@@ -112,7 +114,6 @@ class MyDownstreamModel(LightningModule):
         x = self.extract_features(x)
         
         # x = torch.stack(torch.split(x, self.dataloader_group_size)).flatten(1) # bs x features
-        import pdb; pdb.set_trace()
         x = torch.stack(torch.split(x, self.dataloader_group_size)) # bs x gs x features
         x = self.c_blk(x)
         x = torch.flatten(x, 1)
