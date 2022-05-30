@@ -21,10 +21,10 @@ class MyDownstreamModel(LightningModule):
         self.num_classes=num_classes
         self.log_everything = log_everything
         self.lr = lr
-        self.fe = fe # CAN BE lightly or myresnet
-        self.use_dropout = use_dropout
-        self.num_FC = num_FC
-        self.use_LRa = use_LRa
+        # self.fe = fe # CAN BE lightly or myresnet
+        # self.use_dropout = use_dropout
+        # self.num_FC = num_FC
+        # self.use_LRa = use_LRa
         # self.save_hyperparameters()
 
         # just pass the feature extractor
@@ -36,10 +36,24 @@ class MyDownstreamModel(LightningModule):
 
         # freeze all parameters in feature extractor
         if freeze_backbone:
+            print("... freezing moco backbone ...")
             for p in self.feature_extractor.parameters():
                 p.requires_grad = False
 
         # trainable params
+        in_dim = 512
+        num_channels = self.dataloader_group_size
+        self.c_blk = torch.nn.Sequential(
+                torch.nn.Conv1d(in_channels=num_channels, out_channels=num_channels*2, kernel_size=5, stride=2),
+                torch.nn.ReLU(),
+                torch.nn.Conv1d(in_channels=num_channels*2, out_channels=num_channels, kernel_size=3, stride=2),
+                torch.nn.ReLU(),
+                torch.nn.MaxPool1d(kernel_size=2),
+                )
+        self.fc = torch.nn.Sequential(
+                torch.nn.Linear(252, 252),
+                torch.nn.Linear(252, self.num_classes),
+                )
         # in_dim = 512*self.dataloader_group_size
         # if self.use_dropout and self.num_FC==2:
         #     self.fc = torch.nn.Sequential(
@@ -89,16 +103,12 @@ class MyDownstreamModel(LightningModule):
         return x
 
     def forward(self, x):
-        # WARNING: this is hacky
-        # so x is a vector like this [10x3x224x224]
-        # but 10 is actually batch_size*group_size
-        # so in this case, group_size is 5 and batch size is 2
-        # so I need to split this into 2 after extracting features.
-        # Then I can concat them and run through the linear head.
-        # so need to split after extracting features 
-        # import pdb; pdb.set_trace()
         x = self.extract_features(x)
-        x = torch.stack(torch.split(x, self.dataloader_group_size)).flatten(1) # bs x features
+        
+        # x = torch.stack(torch.split(x, self.dataloader_group_size)).flatten(1) # bs x features
+        x = torch.stack(torch.split(x, self.dataloader_group_size)) # bs x gs x features
+        x = self.c_blk(x)
+        x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
 
@@ -171,10 +181,5 @@ class MyDownstreamModel(LightningModule):
         self.downstream_val_accs.append(float(mean_val_acc))
         
     def configure_optimizers(self):
-        if not self.use_LRa:
-            optim = torch.optim.Adam(self.parameters(), self.lr)
-            return optim
-        else:
-            optim = torch.optim.Adam(self.parameters(), self.lr)
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, )
-            return [optim], [scheduler]
+        optim = torch.optim.Adam(self.parameters(), self.lr)
+        return optim
