@@ -43,6 +43,7 @@ from src.model_stuff.moco_model import MocoModel
 from src.model_stuff.downstream_model_regressor import MyDownstreamModel
 # from src.model_stuff.MyResNet import MyResNet
 from src.model_stuff.MyResNetRegressor import MyResNet
+from src.model_stuff.downstream_model_cnn_regressor import MyDownstreamModel as MyDownstreamModelCNN
 from src.data_stuff.NEW_patch_dataset import PatchDataModule
 
 # from torchmetrics.functional.classification.roc import roc
@@ -65,7 +66,7 @@ def make_plot_matplotlib_sample_level(record_dict):
     plt.figure()
     lw = 2
 
-    colors = ['C0', 'C1']
+    colors = ['C0', 'C1', 'C2']
     for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} patch level ...")
         
@@ -497,6 +498,18 @@ if __name__ == "__main__":
     resnet_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/resnet_1outneuron/epoch=34-val_majority_vote_acc=0.820-val_acc_epoch=0.710.ckpt'
     resnet_checkpoints = [resnet_checkpoint_1, resnet_checkpoint_2, resnet_checkpoint_3, resnet_checkpoint_4]
 
+    
+    cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/downstream_CNN_1outneuron/epoch=34-val_majority_vote_acc=0.790-val_acc_epoch=0.722.ckpt'
+    cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/downstream_CNN_1outneuron/epoch=34-val_majority_vote_acc=0.830-val_acc_epoch=0.768.ckpt'
+    cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/downstream_CNN_1outneuron/epoch=34-val_majority_vote_acc=0.840-val_acc_epoch=0.750.ckpt'
+    cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/downstream_CNN_1outneuron/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.763.ckpt'
+    cnn_checkpoints = [cnn_checkpoint_1, cnn_checkpoint_2, cnn_checkpoint_3, cnn_checkpoint_4]
+
+
+
+
+
+
     ####################### 💡 LIGHTLY MODEL CONFIG 💡 ####################### 
     # NOT IMPORTANT
     memory_bank_size = 4096
@@ -580,6 +593,62 @@ if __name__ == "__main__":
     print("... Done :)")
     print("✅ Done Loading Models")
 
+    ##################### 💡 MyDownstreamModelCNN MODEL CONFIG 💡 #####################
+    # NOT IMPORTANT
+    memory_bank_size = 4096
+    moco_max_epochs = 0
+    lr = 1e-4 # doesnt matter
+    logger = None # doesnt matter
+    freeze_backbone = True
+    use_dropout = False
+    use_LRa = False
+
+    # IMPORTANT
+    batch_size = 32
+    dataloader_group_size = 4
+    num_FC = 2
+    fe = "lightly"
+
+    # --- dataloader ---
+    downstream_cnn_dm = PatchDataModule(
+            data_dir=data_dir,
+            batch_size = batch_size,
+            group_size=dataloader_group_size,
+            num_workers=16
+            )
+
+    # read in lightly model with checkpoint
+    downstream_cnn_model = MocoModel(memory_bank_size, moco_max_epochs)
+    # model = model.load_from_checkpoint(args.checkpoint_dir, memory_bank_size=memory_bank_size)
+    backbone = downstream_cnn_model.feature_extractor.backbone
+    if args.num_out_neurons == 2:
+        print("♻️  Loading downstream model CNN with 2 out neurons ...", end='')
+        downstream_cnn_model = MyDownstreamModelCNN(
+                backbone=backbone,
+                max_epochs=moco_max_epochs,
+                lr=lr,
+                num_classes=2,
+                logger=logger,
+                dataloader_group_size=dataloader_group_size,
+                log_everything=True,
+                freeze_backbone=freeze_backbone,
+                )
+    elif args.num_out_neurons == 1:
+        print("♻️  Loading downstream model CNN Regressor ...", end='')
+        downstream_cnn_model = MyDownstreamModelCNN(
+                backbone=backbone,
+                max_epochs=moco_max_epochs,
+                lr=lr,
+                num_classes=1, # not that it matters...
+                logger=logger,
+                dataloader_group_size=dataloader_group_size,
+                log_everything=True,
+                freeze_backbone=freeze_backbone,
+                )
+
+    downstream_cnn_models = [downstream_cnn_model.load_from_checkpoint(cnn_checkpoint,backbone=backbone,max_epochs=moco_max_epochs,lr=lr,num_classes=2,logger=logger,dataloader_group_size=dataloader_group_size,log_everything=True,freeze_backbone=freeze_backbone,fe=fe,use_dropout=use_dropout,num_FC=num_FC,use_LRa=use_LRa) for cnn_checkpoint in cnn_checkpoints]
+    print(' ... Done :) ')
+
     ####################### 💡 RUN ROC MAIN 💡 ####################### 
     # models = [downstream_models]
     # model_names = ["Downstream_MOCO"]
@@ -588,6 +657,10 @@ if __name__ == "__main__":
     # models = [resnet_models]
     # model_names = ["Resnet"]
     # dms = [resnet_dm]
+
+    # models = [downstream_cnn_models]
+    # model_names = ["CNN_head"]
+    # dms = [downstream_cnn_dm]
 
     models = [resnet_models, downstream_models]
     model_names = ["Resnet", "Downstream_MOCO"]
