@@ -66,6 +66,15 @@ class MyResNet(LightningModule):
         val_loss = val_loss.unsqueeze(dim=-1)
         return {"val_loss": val_loss, "val_acc": val_acc, "batch_outputs": out.clone().detach()}
 
+
+    def get_preds(self, batch):
+        img_id, img_paths, y, x = batch
+        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4])
+        x = x.to(self.device)
+        out = self(x)
+        out = torch.nn.functional.sigmoid(out)
+        return out
+
     # on end of train/validation, I can print stuff like this:
     # print(f"REGULAR train loss: {train_loss} | train acc: {train_acc}")
     # print(f"REGULAR val loss: {val_loss} | val acc: {val_acc}")
