@@ -71,6 +71,7 @@ class MyDownstreamModel(LightningModule):
             self.fc = torch.nn.Sequential(
                     # torch.nn.Linear(2016, 256),
                     torch.nn.Linear(2016, 1),
+                    )
                     
         # elif self.dataloader_group_size == 2:
         #     self.fc = torch.nn.Sequential(
@@ -147,9 +148,9 @@ class MyDownstreamModel(LightningModule):
         
         out = self(x)
 
-        loss = self.criteria(out, torch.nn.functional.one_hot(y, self.num_classes).float())
-        acc = torchmetrics.functional.accuracy(torch.argmax(out, dim=1), y)
-        loss = loss.unsqueeze(dim=-1)
+        loss = self.criteria(out.squeeze(-1), y.float())
+        out_binarized = (torch.nn.functional.sigmoid(out) > 0.5).type(torch.uint8)
+        acc = torchmetrics.functional.accuracy(out_binarized, y)
 
         # , "batch_outputs_downstream": out.clone().detach()}
         if self.log_everything:
@@ -163,8 +164,10 @@ class MyDownstreamModel(LightningModule):
 
         out = self(x)
 
-        val_loss = self.criteria(out, torch.nn.functional.one_hot(y.long(), self.num_classes).float())
-        val_acc = torchmetrics.functional.accuracy(torch.argmax(out, dim=1), y)
+        val_loss = self.criteria(out.squeeze(-1), y.float())
+        out_binarized = (torch.nn.functional.sigmoid(out) > 0.5).type(torch.uint8)
+        val_acc = torchmetrics.functional.accuracy(out_binarized, y)
+
         if self.log_everything:
             self.log('val_loss', val_loss, on_step=True, on_epoch=True)
             self.log('val_acc', val_acc, on_step=True, on_epoch=True)
@@ -179,6 +182,7 @@ class MyDownstreamModel(LightningModule):
         x = x.view(x.shape[0]*x.shape[1], *x.shape[2:])
         x = x.to(self.device)
         out = self(x)
+        out = torch.nn.functional.sigmoid(out)
         return out
 
 
