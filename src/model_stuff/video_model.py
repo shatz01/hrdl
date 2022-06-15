@@ -12,7 +12,7 @@ import torch.nn as nn
 import pytorchvideo.models.resnet
 
 class ResNetVideo(LightningModule):
-    def __init__(self, num_classes=2):
+    def __init__(self, num_classes=2, lr=1e-3):
         super().__init__()
         self.save_hyperparameters()
 
@@ -23,10 +23,11 @@ class ResNetVideo(LightningModule):
                 norm=nn.BatchNorm3d,
                 activation=nn.ReLU,
                 )
+        self.lr = lr
         
-        self.criteria = F.cross_entropy
+        # self.criteria = F.cross_entropy
         # self.criteria = torch.nn.BCEWithLogitsLoss()
-        # self.criteria = torch.nn.BCELoss()
+        self.criteria = torch.nn.BCELoss()
 
         
     def forward(self, x):
@@ -67,4 +68,4 @@ class ResNetVideo(LightningModule):
     # print(f"REGULAR val loss: {val_loss} | val acc: {val_acc}")
                 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
