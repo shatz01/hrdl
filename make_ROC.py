@@ -17,7 +17,8 @@ elif ON_SERVER=="haifa":
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
     # data_dir = "/tcmldrive/tcga_data_formatted/"
-    data_dir = "/tcmldrive/tcga_data_formatted_20T15V/"
+    data_dir = "/tcmldrive/databases/Private/tcga_data_formatted/"
+    # data_dir = "/tcmldrive/shats/tcga_data_formatted_20T15V/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 print(f"🚙 Starting make_ROC.py on {ON_SERVER}! 🚗\n")
@@ -40,6 +41,7 @@ from tqdm import tqdm
 from src.model_stuff.moco_model import MocoModel
 from src.model_stuff.downstream_model import MyDownstreamModel
 from src.model_stuff.downstream_model_regressor import MyDownstreamModel as MyDownstreamModelRegressor
+from src.model_stuff.downstream_model_cnn import MyDownstreamModel as MyDownstreamModelCNN
 from src.model_stuff.MyResNet import MyResNet
 from src.model_stuff.MyResNetRegressor import MyResNet as MyResNetRegressor
 from src.data_stuff.NEW_patch_dataset import PatchDataModule
@@ -56,11 +58,16 @@ import plotly.graph_objects as go
 
 import matplotlib.pyplot as plt
 
+PLOT_TITLE = "ROC multiclass head, 1 class"
+# PLOT_TITLE = "ROC multiclass head, Old method, 1 class"
+
 ############################################################ MAKE PLOTS ###
 def make_plot_matplotlib_sample_level(record_dict):
     plt.figure()
     lw = 2
-    for model_name in record_dict.keys():
+
+    colors = ['C0', 'C1', 'C2']
+    for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} patch level ...")
         
         # get stats
@@ -101,15 +108,16 @@ def make_plot_matplotlib_sample_level(record_dict):
             fpr,
             tprs[0],
             lw=lw,
+            color=color,
             label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[0]:.2f})",
         )
-        plt.plot(
-            fpr,
-            tprs[1],
-            lw=lw,
-            ls='--',
-            label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[1]:.2f})",
-        )
+        # plt.plot(
+        #     fpr,
+        #     tprs[1],
+        #     lw=lw,
+        #     ls='--',
+        #     label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[1]:.2f})",
+        # )
         
 
         # plot std
@@ -117,20 +125,20 @@ def make_plot_matplotlib_sample_level(record_dict):
             fpr,
             tprs_lower1,
             tprs_upper1,
-            color="grey",
+            color=color,
             # lw=lw,
             alpha=0.3,
             label=f"{model_name} +/- 1 std dev)",
         )
-        plt.fill_between(
-            fpr,
-            tprs_lower2,
-            tprs_upper2,
-            color="grey",
-            # lw=lw,
-            alpha=0.3,
-            label=f"{model_name} +/- 1 std dev)",
-        )
+        # plt.fill_between(
+        #     fpr,
+        #     tprs_lower2,
+        #     tprs_upper2,
+        #     color="grey",
+        #     # lw=lw,
+        #     alpha=0.3,
+        #     label=f"{model_name} +/- 1 std dev)",
+        # )
 
 
     plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
@@ -138,7 +146,7 @@ def make_plot_matplotlib_sample_level(record_dict):
     plt.ylim([0.0, 1.01])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title("ROC Regression Head, Patch Level")
+    plt.title(f"{PLOT_TITLE}, Patch Level")
     plt.legend(loc="lower right")
     plt.savefig("tmp_plt.png")
     wandb.log({"img": wandb.Image('tmp_plt.png')})
@@ -146,7 +154,9 @@ def make_plot_matplotlib_sample_level(record_dict):
 def make_plot_matplotlib_image_level(record_dict):
     plt.figure()
     lw = 2
-    for model_name in record_dict.keys():
+
+    colors = ['C0', 'C1', 'C2']
+    for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} Image level ...")
         
         # get stats
@@ -187,15 +197,16 @@ def make_plot_matplotlib_image_level(record_dict):
             fpr,
             tprs[0],
             lw=lw,
+            color=color,
             label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[0]:.2f})",
         )
-        plt.plot(
-            fpr,
-            tprs[1],
-            lw=lw,
-            ls='--',
-            label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[1]:.2f})",
-        )
+        # plt.plot(
+        #     fpr,
+        #     tprs[1],
+        #     lw=lw,
+        #     ls='--',
+        #     label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[1]:.2f})",
+        # )
         
 
         # plot std
@@ -203,26 +214,26 @@ def make_plot_matplotlib_image_level(record_dict):
             fpr,
             tprs_lower1,
             tprs_upper1,
-            color="grey",
             # lw=lw,
+            color=color,
             alpha=0.3,
             label=f"{model_name} +/- 1 std dev)",
         )
-        plt.fill_between(
-            fpr,
-            tprs_lower2,
-            tprs_upper2,
-            color="grey",
-            # lw=lw,
-            alpha=0.3,
-            label=f"{model_name} +/- 1 std dev)",
-        )
+        # plt.fill_between(
+        #     fpr,
+        #     tprs_lower2,
+        #     tprs_upper2,
+        #     color="grey",
+        #     # lw=lw,
+        #     alpha=0.3,
+        #     label=f"{model_name} +/- 1 std dev)",
+        # )
     plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.01])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title("ROC Regression Head, Patient Level")
+    plt.title(f"{PLOT_TITLE}, Patient Level")
     plt.legend(loc="lower right")
     plt.savefig("tmp_plt.png")
     wandb.log({"img": wandb.Image('tmp_plt.png')})
@@ -234,7 +245,7 @@ def make_plot_matplotlib_image_level(record_dict):
 ################################################################ GET ROC ###
 def get_roc_sample_level(preds, y_gt):
     # roc = ROC(pos_label=1)
-    roc = ROC(pos_label=1, num_classes=2)
+    roc = ROC(num_classes=2)
     fpr, tpr, thresholds = roc(preds, y_gt)
     auc_score = [auc(fpr, tpr) for fpr, tpr in zip(fpr, tpr)]
     return fpr, tpr, thresholds, auc_score
@@ -256,7 +267,7 @@ def get_roc_image_level(img_samples_score_dict, samples_dict_gt):
         # assert samples_gt_dict[img_id] == # realized its harder to double check than i thot...
 
     # roc = ROC(pos_label=1)
-    roc = ROC(pos_label=1, num_classes=2)
+    roc = ROC(num_classes=2)
     preds = torch.stack(preds)
     y_gt = torch.stack(y_gt)
     fpr, tpr, thresholds = roc(preds, y_gt)
@@ -287,11 +298,12 @@ def get_preds(model, dm):
 
             preds =  model.get_preds(batch)
 
+
             if dm.group_size > 1:
                 img_paths_lol = [p.split(",") for p in img_paths]
                 img_paths = [item for sublist in img_paths_lol for item in sublist]
-                preds = preds.repeat_interleave(dm.group_size)
-                y_gt = y_gt.repeat_interleave(dm.group_size)
+                preds = preds.repeat_interleave(dm.group_size, axis=0)
+                y_gt = y_gt.repeat_interleave(dm.group_size, axis=0)
                 img_id = tuple(np.repeat(np.array(img_id), dm.group_size))
                 # debug: 
                 # TCGA-AA-3875 is all None
@@ -371,7 +383,7 @@ def make_roc_main(models, model_names, dms):
 
             record_dict[model_name]['model'] = model
             record_dict[model_name]["num_models"] = num_models
-            print(f'♻️  Evaluating {model_name} {i} ♻️')
+            print(f'\n♻️  Evaluating {model_name} {i} ♻️')
             
             # get preds
             preds, y_gt, img_ids, img_paths = get_preds(model, dm)
@@ -464,21 +476,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # wandb init
-    EXP_NAME = f"ROC"
-    wandb.init(project="view_rocs", name=EXP_NAME)
+    EXP_NAME = "ROC"
+    # wandb.init(project="view_rocs", name=EXP_NAME)
+    wandb.init(project="moti_tcga_AVG10", name=EXP_NAME)
 
     
     # checkpoint dirs
-    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/downstream3/epoch=2-val_majority_vote_acc=0.250-val_acc_epoch=0.308.ckpt'
-    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/downstream3/epoch=2-val_majority_vote_acc=0.260-val_acc_epoch=0.292.ckpt'
-    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/downstream3/epoch=2-val_majority_vote_acc=0.660-val_acc_epoch=0.612.ckpt'
-    lightly_checkpoints = [lightly_checkpoint_1, lightly_checkpoint_2, lightly_checkpoint_3]
+    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/downstream10/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.799.ckpt'
+    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/downstream10/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.800.ckpt'
+    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/downstream10/epoch=34-val_majority_vote_acc=0.860-val_acc_epoch=0.801.ckpt'
+    lightly_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/downstream10/epoch=34-val_majority_vote_acc=0.870-val_acc_epoch=0.803.ckpt'
+    lightly_checkpoints = [lightly_checkpoint_1, lightly_checkpoint_2, lightly_checkpoint_3, lightly_checkpoint_4]
 
-    resnet_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/resnet3/epoch=2-val_majority_vote_acc=0.710-val_acc_epoch=0.628.ckpt'
-    resnet_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/resnet3/epoch=2-val_majority_vote_acc=0.770-val_acc_epoch=0.685.ckpt'
-    resnet_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/resnet3/epoch=2-val_majority_vote_acc=0.820-val_acc_epoch=0.712.ckpt'
-    resnet_checkpoints = [resnet_checkpoint_1, resnet_checkpoint_2, resnet_checkpoint_3]
+    resnet_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/resnet10/epoch=34-val_majority_vote_acc=0.790-val_acc_epoch=0.704.ckpt'
+    resnet_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/resnet10/epoch=34-val_majority_vote_acc=0.810-val_acc_epoch=0.710.ckpt'
+    resnet_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/resnet10/epoch=34-val_majority_vote_acc=0.810-val_acc_epoch=0.724.ckpt'
+    resnet_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/resnet10/epoch=34-val_majority_vote_acc=0.810-val_acc_epoch=0.725.ckpt'
+    resnet_checkpoints = [resnet_checkpoint_1, resnet_checkpoint_2, resnet_checkpoint_3, resnet_checkpoint_4]
 
+    cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/downstream_cnn10/epoch=2-val_majority_vote_acc=0.820-val_acc_epoch=0.727-v2.ckpt'
+    cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/downstream_cnn10/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.769.ckpt'
+    cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/downstream_cnn10/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.770-v1.ckpt'
+    cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/downstream_cnn10/epoch=34-val_majority_vote_acc=0.850-val_acc_epoch=0.770.ckpt'
+    cnn_checkpoints = [cnn_checkpoint_2, cnn_checkpoint_3, cnn_checkpoint_4]
 
     ####################### 💡 LIGHTLY MODEL CONFIG 💡 ####################### 
     # NOT IMPORTANT
@@ -563,18 +583,92 @@ if __name__ == "__main__":
     print("... Done :)")
     print("✅ Done Loading Models")
 
+    ####################### 💡 CNN MODEL CONFIG 💡 ####################### 
+    # NOT IMPORTANT
+    memory_bank_size = 4096
+    moco_max_epochs = 0
+    lr = 1e-4 # doesnt matter
+    logger = None # doesnt matter
+    freeze_backbone = True
+    use_dropout = False
+    use_LRa = False
+    
+    # IMPORTANT
+    batch_size = 32
+    dataloader_group_size = 4
+    num_FC = 2
+    fe = "lightly"
+    
+    # --- dataloader ---
+    downstream_cnn_dm = PatchDataModule(
+            data_dir=data_dir,
+            batch_size = batch_size,
+            group_size=dataloader_group_size,
+            num_workers=16
+            )
+
+    # read in lightly model with checkpoint
+    downstream_cnn_model = MocoModel(memory_bank_size, moco_max_epochs)
+    # model = model.load_from_checkpoint(args.checkpoint_dir, memory_bank_size=memory_bank_size)
+    backbone = downstream_cnn_model.feature_extractor.backbone
+    if args.num_out_neurons == 2:
+        print("♻️  Loading downstream model CNN with 2 out neurons ...", end='')
+        downstream_cnn_model = MyDownstreamModelCNN(
+                backbone=backbone,
+                max_epochs=moco_max_epochs,
+                lr=lr,
+                num_classes=2,
+                logger=logger,
+                dataloader_group_size=dataloader_group_size,
+                log_everything=True,
+                freeze_backbone=freeze_backbone,
+                )
+    elif args.num_out_neurons == 1:
+        print("♻️  Loading downstream model CNN Regressor ...", end='')
+        raise NotImplementedError
+        # downstream_model = MyDownstreamModelRegressor(
+        #         backbone=backbone,
+        #         max_epochs=moco_max_epochs,
+        #         lr=lr,
+        #         num_classes=2,
+        #         logger=logger,
+        #         dataloader_group_size=dataloader_group_size,
+        #         log_everything=True,
+        #         freeze_backbone=freeze_backbone,
+        #         fe=fe,
+        #         use_dropout=use_dropout,
+        #         num_FC=num_FC,
+        #         use_LRa=use_LRa
+        #         )
+    downstream_cnn_models = [downstream_cnn_model.load_from_checkpoint(cnn_checkpoint,backbone=backbone,max_epochs=moco_max_epochs,lr=lr,num_classes=2,logger=logger,dataloader_group_size=dataloader_group_size,log_everything=True,freeze_backbone=freeze_backbone,fe=fe,use_dropout=use_dropout,num_FC=num_FC,use_LRa=use_LRa) for cnn_checkpoint in cnn_checkpoints]
+    print(' ... Done :) ')
+
+
+
+
+
+
+
     ####################### 💡 RUN ROC MAIN 💡 ####################### 
     # models = [downstream_models]
     # model_names = ["Downstream_MOCO"]
     # dms = [downstream_dm]
 
-    models = [resnet_models]
-    model_names = ["Resnet"]
-    dms = [resnet_dm]
+    # models = [resnet_models]
+    # model_names = ["Resnet"]
+    # dms = [resnet_dm]
 
-    # models = [resnet_model, downstream_model]
+    # models = [downstream_cnn_models]
+    # model_names = ["CNN_head"]
+    # dms = [downstream_cnn_dm]
+
+    # models = [resnet_models, downstream_models]
     # model_names = ["Resnet", "Downstream_MOCO"]
     # dms = [resnet_dm, downstream_dm]
+
+    models = [resnet_models, downstream_models, downstream_cnn_models]
+    model_names = ["Resnet", "Downstream_MOCO", "CNN_head"]
+    dms = [resnet_dm, downstream_dm, downstream_cnn_dm]
     
     make_roc_main(models, model_names, dms)
 
