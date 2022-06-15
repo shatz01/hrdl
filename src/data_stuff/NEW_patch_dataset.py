@@ -70,7 +70,7 @@ class PatchDataset(Dataset):
         """
 
         # make class to index dict
-        classes_list = os.listdir(self.root_dir)
+        classes_list = sorted(os.listdir(self.root_dir))
         class_to_idx = {}
         for idx, class_name in enumerate(classes_list):
             class_to_idx[class_name] = torch.tensor(idx)
@@ -205,7 +205,7 @@ class PatchDataModule(pl.LightningDataModule):
 
         rgb_mean = (0.4914, 0.4822, 0.4465)
         rgb_std = (0.2023, 0.1994, 0.2010)
-        self.train_transforms = torchvision.transforms.Compose([
+        self.train_tfms = torchvision.transforms.Compose([
             # torchvision.transforms.RandomCrop(32, padding=4),
             # torchvision.transforms.RandomResizedCrop(size=224, scale=(0.7, 1.0), ratio=(0.8, 1.2)),
             torchvision.transforms.RandomVerticalFlip(),
@@ -213,7 +213,7 @@ class PatchDataModule(pl.LightningDataModule):
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(rgb_mean, rgb_std),
         ])
-        self.val_transforms = torchvision.transforms.Compose([
+        self.val_tfms = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(rgb_mean, rgb_std),
         ])
@@ -221,12 +221,12 @@ class PatchDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         # things to do on every accelerator (distibuted mode)
         # splits, etc
-        self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
-        self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
+        self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_tfms)
+        self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_tfms)
 
 
     def train_dataloader(self):
-        self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_transforms)
+        self.train_ds = PatchDataset(self.train_dir, group_size=self.group_size, transform=self.train_tfms)
         train_dataloader = torch.utils.data.DataLoader(
                 self.train_ds,
                 batch_size=self.batch_size,
@@ -239,7 +239,7 @@ class PatchDataModule(pl.LightningDataModule):
 
 
     def val_dataloader(self):
-        # self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_transforms)
+        # self.val_ds = PatchDataset(self.val_dir, group_size=self.group_size, transform=self.val_tfms)
         val_dataloader = torch.utils.data.DataLoader(
                 self.val_ds,
                 batch_size=self.batch_size,
