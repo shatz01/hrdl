@@ -4,8 +4,8 @@ ON_SERVER = "DGX"
 # ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
-    # data_dir = "/workspace/repos/data/tcga_data_formatted/"
-    data_dir = "/workspace/repos/data/tcga_data_formatted_L16/" ### Patients with more than 16 patches
+    data_dir = "/workspace/repos/data/tcga_data_formatted/"
+    # data_dir = "/workspace/repos/data/tcga_data_formatted_L16/" ### Patients with more than 16 patches
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000/"
     # data_dir = "/workspace/repos/data/imagenette_tesselated_4000_300imgs/"
     from src.data_stuff.pip_tools import install
@@ -32,16 +32,16 @@ from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
-pl.seed_everything(42)
+# pl.seed_everything(42)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fe', type=str, default='lightly') # lightly or myresnet
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--group_size', type=int, default=1)
-parser.add_argument('--learning_rate', type=float, default=1e-3)
+parser.add_argument('--group_size', type=int, default=4)
+parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--freeze_backbone', type=bool, default=True)
-parser.add_argument('--num_epochs', type=int, default=300)
-parser.add_argument('--load_checkpoint', type=bool, default=False)
+parser.add_argument('--num_epochs', type=int, default=35)
+parser.add_argument('--load_checkpoint', type=bool, default=True)
 parser.add_argument('--use_dropout', type=bool, default=False)
 parser.add_argument('--num_FC', type=int, default=2)
 parser.add_argument('--use_LRa', type=bool, default=False)
@@ -58,6 +58,7 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
         "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
+        # "model_loc": "/workspace/repos/hrdl/saved_models/moco/myMOCO_150imgs_bs128_ep610_ngp1_nnodes4_stratddp_nsplits2/epoch=572-MOCO_train_loss_ssl=0.76.ckpt"
         # "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
         # "model_loc": None,
         # "fe": "lightly",
@@ -90,23 +91,34 @@ drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
 num_out_neurons = hypers_dict["num_out_neurons"]
-EXP_NAME = f"FIXDL_L16_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
+EXP_NAME = f"train10_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+# logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_AVG10", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
 lr_monitor = LearningRateMonitor(logging_interval='step')
+# checkpoint_callback = ModelCheckpoint(
+#     # dirpath=f'./saved_models/downstream/{EXP_NAME}',
+#     dirpath=f'/workspace/repos/hrdl/saved_models/downstream/downstream10/',
+#     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
+#     save_top_k=1,
+#     verbose=True,
+#     monitor='val_majority_vote_acc',
+#     mode='max'
+# )
+
 checkpoint_callback = ModelCheckpoint(
-    dirpath=f'./saved_models/downstream/{EXP_NAME}',
+    # dirpath=f'./saved_models/downstream/{EXP_NAME}',
+    dirpath=f'/workspace/repos/hrdl/saved_models/downstream/downstream10/',
     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
-    save_top_k=3,
     verbose=True,
-    monitor='val_majority_vote_acc',
+    monitor='epoch',
     mode='max'
 )
 
@@ -135,7 +147,7 @@ model = MyDownstreamModel(
         fe=hypers_dict["fe"],
         use_dropout=hypers_dict["use_dropout"],
         num_FC=hypers_dict["num_FC"],
-        use_LRa=hypers_dict["use_LRa"],)
+        use_LRa=hypers_dict["use_LRa"],
         # num_out_neurons=hypers_dict["num_out_neurons"])
 
 # data
@@ -152,4 +164,4 @@ trainer = Trainer(gpus=1, max_epochs=hypers_dict["num_epochs"],
         )
 trainer.fit(model, dm)
 
-# trainer.save_checkpoint("moco_model_newdm.pt")
+# trainer.save_checkpoint("/workspace/repos/hrdl/saved_models/downstream/downstream10/{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}.pt")
