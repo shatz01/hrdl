@@ -1,7 +1,7 @@
 print("-- python script started --")
-ON_SERVER = "DGX"
+# ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-# ON_SERVER = "alsx2"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     # data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -14,7 +14,8 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
-    data_dir = "/tcmldrive/tcga_data_formatted/"
+    # data_dir = "/tcmldrive/tcga_data_formatted/"
+    data_dir = "/tcmldrive/tcga_data_formatted_20T15V/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 print(f"🚙 Starting Downstream Experiment on {ON_SERVER}! 🚗")
@@ -37,8 +38,8 @@ pl.seed_everything(42)
 parser = argparse.ArgumentParser()
 parser.add_argument('--fe', type=str, default='lightly') # lightly or myresnet
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--group_size', type=int, default=1)
-parser.add_argument('--learning_rate', type=float, default=1e-3)
+parser.add_argument('--group_size', type=int, default=4)
+parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--freeze_backbone', type=bool, default=True)
 parser.add_argument('--num_epochs', type=int, default=300)
 parser.add_argument('--load_checkpoint', type=bool, default=False)
@@ -57,8 +58,8 @@ hypers_dict = {
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=70-MOCO_train_loss_ssl=3.79.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=492-MOCO_train_loss_ssl=2.20.ckpt",
         # "model_loc": "/workspace/repos/hrdl/saved_models/moco/temp_saves/epoch=618-MOCO_train_loss_ssl=2.09.ckpt",
-        "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
-        # "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
+        # "model_loc": "/workspace/repos/colorectal_cancer_ai/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON DGX
+        "model_loc": "/home/shats/repos/hrdl/saved_models/epoch=510-MOCO_train_loss_ssl=0.88.ckpt", # ON ALSX2
         # "model_loc": None,
         # "fe": "lightly",
         "fe": args.fe,
@@ -90,12 +91,12 @@ drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
 num_out_neurons = hypers_dict["num_out_neurons"]
-EXP_NAME = f"FIXDL_L16_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
+EXP_NAME = f"20T15Ve_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_formatted_ONLY10", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
@@ -112,6 +113,7 @@ checkpoint_callback = ModelCheckpoint(
 
 # model
 if args.load_checkpoint:
+    print("♻️♻️♻️♻️♻️♻️  LOADING CHECKPOINT")
     model = MocoModel(
             hypers_dict["memory_bank_size"],
             hypers_dict["moco_max_epochs"]
