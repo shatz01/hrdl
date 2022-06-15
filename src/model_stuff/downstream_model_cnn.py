@@ -45,10 +45,10 @@ class MyDownstreamModel(LightningModule):
         num_channels = self.dataloader_group_size
         self.c_blk = torch.nn.Sequential(
                 torch.nn.Conv1d(in_channels=num_channels, out_channels=num_channels*2, kernel_size=5, stride=2),
-                torch.nn.BatchNorm1d(num_channels*2),
+                # torch.nn.BatchNorm1d(num_channels*2),
                 torch.nn.ReLU(),
                 torch.nn.Conv1d(in_channels=num_channels*2, out_channels=num_channels, kernel_size=3, stride=2),
-                torch.nn.BatchNorm1d(num_channels),
+                # torch.nn.BatchNorm1d(num_channels),
                 torch.nn.ReLU(),
                 torch.nn.MaxPool1d(kernel_size=2),
                 )
@@ -59,9 +59,29 @@ class MyDownstreamModel(LightningModule):
                     )
         elif self.dataloader_group_size == 8:
             self.fc = torch.nn.Sequential(
-                    torch.nn.Linear(504, 504),
+                    # torch.nn.Linear(504, 504),
                     torch.nn.Linear(504, self.num_classes),
                     )
+        elif self.dataloader_group_size == 16:
+            self.fc = torch.nn.Sequential(
+                    # torch.nn.Linear(1008, 1008),
+                    torch.nn.Linear(1008, self.num_classes),
+                    )
+        elif self.dataloader_group_size == 32:
+            self.fc = torch.nn.Sequential(
+                    # torch.nn.Linear(2016, 256),
+                    torch.nn.Linear(2016, self.num_classes),
+                    )
+        # elif self.dataloader_group_size == 2:
+        #     self.fc = torch.nn.Sequential(
+        #             torch.nn.Linear(126, 126),
+        #             torch.nn.Linear(126, self.num_classes),
+        #             )
+        # elif self.dataloader_group_size == 3:
+        #     self.fc = torch.nn.Sequential(
+        #             torch.nn.Linear(189, 189),
+        #             torch.nn.Linear(189, self.num_classes),
+        #             )
         # in_dim = 512*self.dataloader_group_size
         # if self.use_dropout and self.num_FC==2:
         #     self.fc = torch.nn.Sequential(

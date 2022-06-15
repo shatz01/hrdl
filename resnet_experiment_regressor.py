@@ -1,7 +1,7 @@
 print("-- python script started --")
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -30,12 +30,12 @@ from src.data_stuff.NEW_patch_dataset import PatchDataModule
 from src.model_stuff.MyResNetRegressor import MyResNet
 from src.callback_stuff.PatientLevelValidation import PatientLevelValidation
 
-pl.seed_everything(42)
+# pl.seed_everything(42)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--group_size', type=int, default=1)
-parser.add_argument('--num_epochs', type=int, default=210)
+parser.add_argument('--num_epochs', type=int, default=35)
 parser.add_argument('--num_workers', type=int, default=8)
 args = parser.parse_args()
 
@@ -52,22 +52,31 @@ hypers_dict = {
 # make experiment name
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"ResnetREGRESSOR_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
+EXP_NAME = f"train10_ResnetREGRESSOR_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+# logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_AVG10", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitor
+# checkpoint_callback = ModelCheckpoint(
+#     dirpath=f'./saved_models/resnet_regressor/{EXP_NAME}',
+#     filename='{epoch}-{val_majority_vote_acc:.2f}-{val_acc_epoch}',
+#     save_top_k=3,
+#     verbose=True,
+#     monitor='val_majority_vote_acc',
+#     mode='max'
+# )
 checkpoint_callback = ModelCheckpoint(
-    dirpath=f'./saved_models/resnet_regressor/{EXP_NAME}',
-    filename='{epoch}-{val_majority_vote_acc:.2f}-{val_acc_epoch}',
-    save_top_k=3,
+    # dirpath=f'./saved_models/downstream/{EXP_NAME}',
+    dirpath=f'/workspace/repos/hrdl/saved_models/downstream/resnet_1outneuron/',
+    filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
     verbose=True,
-    monitor='val_majority_vote_acc',
+    monitor='epoch',
     mode='max'
 )
 
