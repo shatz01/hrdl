@@ -1,7 +1,7 @@
 print("-- python script started --")
-ON_SERVER = "DGX"
+# ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-# ON_SERVER = "alsx2"
+ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -14,7 +14,8 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
-    data_dir = "/tcmldrive/tcga_data_formatted/"
+    # data_dir = "/tcmldrive/tcga_data_formatted/"
+    data_dir = "/tcmldrive/tcga_data_formatted_20T15V/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 print(f"🚙 Starting Downstream Experiment on {ON_SERVER}! 🚗")
@@ -124,6 +125,7 @@ checkpoint_callback = ModelCheckpoint(
 
 # model
 if args.load_checkpoint:
+    print("♻️♻️♻️♻️♻️♻️  LOADING CHECKPOINT")
     model = MocoModel(
             hypers_dict["memory_bank_size"],
             hypers_dict["moco_max_epochs"]
