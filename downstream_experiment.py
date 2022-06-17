@@ -1,7 +1,7 @@
 print("-- python script started --")
-# ON_SERVER = "DGX"
+ON_SERVER = "DGX"
 # ON_SERVER = "haifa"
-ON_SERVER = "alsx2"
+# ON_SERVER = "alsx2"
 
 if ON_SERVER=="DGX":
     data_dir = "/workspace/repos/data/tcga_data_formatted/"
@@ -41,7 +41,7 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=4)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--freeze_backbone', type=bool, default=True)
-parser.add_argument('--num_epochs', type=int, default=35)
+parser.add_argument('--num_epochs', type=int, default=100)
 parser.add_argument('--load_checkpoint', type=bool, default=True)
 parser.add_argument('--use_dropout', type=bool, default=False)
 parser.add_argument('--num_FC', type=int, default=2)
@@ -92,14 +92,14 @@ drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
 num_out_neurons = hypers_dict["num_out_neurons"]
-EXP_NAME = f"train10_{ON_SERVER}_downstrexp_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
+EXP_NAME = f"downstrexp_{ON_SERVER}_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}_num_out_neurons{num_out_neurons}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcga_AVG10", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_AVG100_2class", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
@@ -116,7 +116,7 @@ lr_monitor = LearningRateMonitor(logging_interval='step')
 
 checkpoint_callback = ModelCheckpoint(
     # dirpath=f'./saved_models/downstream/{EXP_NAME}',
-    dirpath=f'/workspace/repos/hrdl/saved_models/downstream/downstream10/',
+    dirpath=f'/workspace/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/',
     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
     verbose=True,
     monitor='epoch',
@@ -149,7 +149,7 @@ model = MyDownstreamModel(
         fe=hypers_dict["fe"],
         use_dropout=hypers_dict["use_dropout"],
         num_FC=hypers_dict["num_FC"],
-        use_LRa=hypers_dict["use_LRa"],
+        use_LRa=hypers_dict["use_LRa"],)
         # num_out_neurons=hypers_dict["num_out_neurons"])
 
 # data

@@ -39,10 +39,10 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--group_size', type=int, default=4)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--freeze_backbone', type=bool, default=True)
-parser.add_argument('--num_epochs', type=int, default=35)
+parser.add_argument('--num_epochs', type=int, default=100)
 parser.add_argument('--load_checkpoint', type=bool, default=True)
 parser.add_argument('--use_dropout', type=bool, default=False)
-parser.add_argument('--num_FC', type=int, default=2)
+parser.add_argument('--num_FC', type=int, default=1)
 parser.add_argument('--use_LRa', type=bool, default=False)
 parser.add_argument('--num_workers', type=int, default=8)
 args = parser.parse_args()
@@ -88,14 +88,14 @@ lr = hypers_dict["learning_rate"]
 drpout = hypers_dict["use_dropout"]
 nFC = hypers_dict["num_FC"]
 LRa = hypers_dict["use_LRa"]
-EXP_NAME = f"train10_{ON_SERVER}_downstrexpREGRESSOR_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}"
+EXP_NAME = f"downstrexpREGRESSOR_{ON_SERVER}_fe{fe}_gs{gs}_bs{bs}_lr{lr}_drpout{drpout}_freeze{freeze}_nFC{nFC}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
 # logger=WandbLogger(project="Equate_resnet", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcga_formatted", name=EXP_NAME)
 # logger=WandbLogger(project="moti_tcgaF_wROC", name=EXP_NAME)
-logger=WandbLogger(project="moti_tcga_AVG10", name=EXP_NAME)
+logger=WandbLogger(project="moti_tcga_AVG100_2class", name=EXP_NAME)
 logger.experiment.config.update(hypers_dict)
 
 # monitors
@@ -109,8 +109,7 @@ lr_monitor = LearningRateMonitor(logging_interval='step')
 #     mode='max'
 # )
 checkpoint_callback = ModelCheckpoint(
-    # dirpath=f'./saved_models/downstream/{EXP_NAME}',
-    dirpath=f'/workspace/repos/hrdl/saved_models/downstream/downstream_1outneuron/',
+    dirpath=f'/workspace/repos/hrdl/saved_models/avg100ep_1class/downstream_MLP/',
     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
     verbose=True,
     monitor='epoch',
