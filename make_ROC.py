@@ -16,10 +16,8 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
-    # data_dir = "/tcmldrive/tcga_data_formatted/"
     data_dir = "/tcmldrive/databases/Public/tcga_data_formatted/"
     # data_dir = "/tcmldrive/shats/tcga_data_formatted_20T15V/"
-    # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 print(f"🚙 Starting make_ROC.py on {ON_SERVER}! 🚗\n")
 import torch.multiprocessing
@@ -483,28 +481,28 @@ if __name__ == "__main__":
 
     
     # checkpoint dirs
-    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.774.ckpt'
-    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.830-val_acc_epoch=0.784.ckpt'
-    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.789.ckpt'
-    lightly_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.795.ckpt'
-    lightly_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.803.ckpt'
-    lightly_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.797.ckpt'
+    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.774.ckpt'
+    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.830-val_acc_epoch=0.784.ckpt'
+    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.789.ckpt'
+    lightly_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.795.ckpt'
+    lightly_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.803.ckpt'
+    lightly_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.797.ckpt'
     lightly_checkpoints = [lightly_checkpoint_1, lightly_checkpoint_2, lightly_checkpoint_3, lightly_checkpoint_4, lightly_checkpoint_5, lightly_checkpoint_6]
 
-    resnet_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.715.ckpt'
-    resnet_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.705.ckpt'
-    resnet_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.789.ckpt'
-    resnet_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.731.ckpt'
-    resnet_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.737.ckpt'
-    resnet_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.719.ckpt'
+    resnet_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.715.ckpt'
+    resnet_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.705.ckpt'
+    resnet_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.720.ckpt'
+    resnet_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.731.ckpt'
+    resnet_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.737.ckpt'
+    resnet_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.719.ckpt'
     resnet_checkpoints = [resnet_checkpoint_1, resnet_checkpoint_2, resnet_checkpoint_3, resnet_checkpoint_4, resnet_checkpoint_5, resnet_checkpoint_6]
 
-    cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.743.ckpt'
-    cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.765.ckpt'
-    cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.746.ckpt'
-    cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.752.ckpt'
-    cnn_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.784.ckpt'
-    cnn_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.755.ckpt'
+    cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.743.ckpt'
+    cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.765.ckpt'
+    cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.746.ckpt'
+    cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.752.ckpt'
+    cnn_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.784.ckpt'
+    cnn_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.755.ckpt'
     cnn_checkpoints = [cnn_checkpoint_1, cnn_checkpoint_2, cnn_checkpoint_3, cnn_checkpoint_4, cnn_checkpoint_5, cnn_checkpoint_6]
 
     ####################### 💡 LIGHTLY MODEL CONFIG 💡 ####################### 

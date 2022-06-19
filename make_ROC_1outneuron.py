@@ -16,10 +16,8 @@ elif ON_SERVER=="haifa":
     data_dir = "/home/shatz/repos/data/tcga_data_formatted/"
     # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 elif ON_SERVER=="alsx2":
-    # data_dir = "/tcmldrive/tcga_data_formatted/"
     data_dir = "/tcmldrive/databases/Public/tcga_data_formatted/"
     # data_dir = "/tcmldrive/shats/tcga_data_formatted_20T15V/"
-    # data_dir = "/home/shatz/repos/data/imagenette_tesselated_4000/"
 
 print(f"🚙 Starting make_ROC.py on {ON_SERVER}! 🚗\n")
 import torch.multiprocessing
@@ -153,7 +151,7 @@ def make_plot_matplotlib_image_level(record_dict):
     plt.figure()
     lw = 2
 
-    colors = ['C0', 'C1']
+    colors = ['C0', 'C1', 'C2']
     for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} Image level ...")
         
@@ -469,7 +467,7 @@ if __name__ == "__main__":
     # wandb init
     EXP_NAME = "ROC"
     # wandb.init(project="view_rocs", name=EXP_NAME)
-    wandb.init(project="moti_tcga_AVG10", name=EXP_NAME)
+    wandb.init(project="moti_tcga_AVG100_2class", name=EXP_NAME)
 
     
     # checkpoint dirs 1 out neurons
@@ -655,9 +653,9 @@ if __name__ == "__main__":
     # model_names = ["CNN_head"]
     # dms = [downstream_cnn_dm]
 
-    models = [resnet_models, downstream_models]
-    model_names = ["Resnet", "Downstream_MOCO"]
-    dms = [resnet_dm, downstream_dm]
+    models = [resnet_models, downstream_models, downstream_cnn_models]
+    model_names = ["Resnet", "MLP_head", "CNN_head"]
+    dms = [resnet_dm, downstream_dm, downstream_cnn_dm]
     
     make_roc_main(models, model_names, dms)
 
