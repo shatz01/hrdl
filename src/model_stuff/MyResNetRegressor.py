@@ -8,9 +8,10 @@ import torchvision.models as models
 import torchmetrics
 
 class MyResNet(LightningModule):
-    def __init__(self, num_classes=2):
+    def __init__(self, num_classes=2, weight_decay=None):
         super().__init__()
         self.save_hyperparameters()
+        self.weight_decay = weight_decay
 
         resnet = models.resnet18(pretrained=True)
         self.backbone = torch.nn.Sequential(*(list(resnet.children())[:-1])) # just remove the fc
@@ -80,4 +81,9 @@ class MyResNet(LightningModule):
     # print(f"REGULAR val loss: {val_loss} | val acc: {val_acc}")
                 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        if self.weight_decay:
+            print(f"DOING WEIGHT DECAY {self.weight_decay}")
+            return torch.optim.Adam(self.parameters(), lr=1e-3, weight_decay=self.weight_decay)
+        else:
+            print(" DOING LEARNING RATE 1e-4!!!")
+            return torch.optim.Adam(self.parameters(), lr=1e-4)

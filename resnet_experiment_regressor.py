@@ -37,6 +37,7 @@ parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--group_size', type=int, default=1)
 parser.add_argument('--num_epochs', type=int, default=100)
 parser.add_argument('--num_workers', type=int, default=8)
+parser.add_argument('--weight_decay', type=float, default=None)
 args = parser.parse_args()
 
 # --- hypers --- #
@@ -45,14 +46,16 @@ hypers_dict = {
         "batch_size": args.batch_size,
         "group_size": args.group_size,
         "num_epochs": args.num_epochs,
-        "num_workers": args.num_workers
+        "num_workers": args.num_workers,
+        "weight_decay": args.weight_decay
         }
 # ------------- #
 
 # make experiment name
 gs = hypers_dict["group_size"]
 bs = hypers_dict["batch_size"]
-EXP_NAME = f"ResnetREGRESSOR_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
+wd = hypers_dict["weight_decay"]
+EXP_NAME = f"ResnetREGRESSOR_wd{wd}_BASELINE_{ON_SERVER}_gs{gs}_bs{bs}"
 print(f"🚙 Experiment Name: {EXP_NAME}! 🚗")
 
 # logger
@@ -73,7 +76,7 @@ logger.experiment.config.update(hypers_dict)
 # )
 checkpoint_callback = ModelCheckpoint(
     # dirpath=f'./saved_models/downstream/{EXP_NAME}',
-    dirpath=f'/workspace/repos/hrdl/saved_models/avg100ep_1class/resnet/',
+    dirpath=f'/workspace/repos/hrdl/saved_models/avg100ep_1class/resnet_wd{args.weight_decay}/',
     filename='{epoch}-{val_majority_vote_acc:.3f}-{val_acc_epoch:.3f}',
     verbose=True,
     monitor='epoch',
@@ -81,7 +84,7 @@ checkpoint_callback = ModelCheckpoint(
 )
 
 # model
-model = MyResNet()
+model = MyResNet(weight_decay=hypers_dict["weight_decay"])
 
 # data
 dm = PatchDataModule(data_dir=hypers_dict["data_dir"], batch_size=hypers_dict["batch_size"], group_size=hypers_dict["group_size"], num_workers=hypers_dict["num_workers"])
