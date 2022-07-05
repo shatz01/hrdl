@@ -32,6 +32,7 @@ from pytorch_lightning.loggers import WandbLogger
 import torchvision
 import argparse
 import numpy as np
+import torchmetrics
 
 # from rich.progress import track
 from tqdm import tqdm
@@ -59,12 +60,16 @@ import matplotlib.pyplot as plt
 PLOT_TITLE = "ROC multiclass head, 1 class"
 # PLOT_TITLE = "ROC multiclass head, Old method, 1 class"
 
+# def log_accs(record_dict):
+#     for model_name in record_dict.keys()
+    
+
 ############################################################ MAKE PLOTS ###
 def make_plot_matplotlib_sample_level(record_dict):
     plt.figure()
     lw = 2
 
-    colors = ['C0', 'C1', 'C2']
+    colors = ['C0', 'C1'] # , 'C2']
     for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} patch level ...")
         
@@ -107,7 +112,7 @@ def make_plot_matplotlib_sample_level(record_dict):
             tprs[0],
             lw=lw,
             color=color,
-            label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[0]:.2f})",
+            label=f"{model_name} (auc = {auc_scores[0]:.2f} +/- {std_aucs[0]:.3f})",
         )
         # plt.plot(
         #     fpr,
@@ -153,7 +158,7 @@ def make_plot_matplotlib_image_level(record_dict):
     plt.figure()
     lw = 2
 
-    colors = ['C0', 'C1', 'C2']
+    colors = ['C0', 'C1'] # , 'C2']
     for model_name, color in zip(record_dict.keys(), colors):
         print(f"📊 Plotting {model_name} Image level ...")
         
@@ -327,8 +332,51 @@ def get_preds(model, dm):
 
 
 
+def get_patch_acc(preds, y_gt):
+    return torchmetrics.functional.accuracy(preds, y_gt)
 
+def get_patient_acc(img_samples_score_dict, samples_dict, mode=None):
+    y = []
+    y_hat_rawsum = []
+    y_hat_majority_vote = []
+    for img_id in samples_dict.keys():
+        img_y = samples_dict[img_id][1]
+        patch_yhats = img_samples_score_dict[img_id]
+        img_yhat = []
+        img_yhat_none_count = 0 # just for error checking
+        for patch_path in patch_yhats:
+            if patch_yhats[patch_path] is not None:
+                img_yhat.append(patch_yhats[patch_path])
+            else:
+                img_yhat_none_count += 1
+        try:
+            img_yhat = torch.stack(img_yhat)
+        except:
+            import pdb; pdb.set_trace()
+        # img_yhat_rawsum_argmax = torch.argmax(img_yhat_rawsum_logits)
+        if img_yhat.shape[1] == 2:
+            img_yhat_rawsum_logits = torch.sum(img_yhat, dim=0)
+            img_yhat_majority_vote = torch.mode(torch.argmax(img_yhat, dim=1)).values
+        elif img_yhat.shape[1] == 1: ### REGRESSION CASE
+            img_yhat_rawsum_logits = torch.tensor(0) ### FIX THIS FOR REGRESSION CASE
+            # for the above, intuition says to sigmoid them, and then just check if average is greater or less than 0.5
+            img_yhat_majority_vote = torch.mode((torch.nn.functional.sigmoid(img_yhat)>0.5).type(torch.uint8).squeeze(-1)).values
+        else:
+            print("ERROR!!! NO fucking idea what is going on!")
+        y.append(img_y)
+        y_hat_rawsum.append(img_yhat_rawsum_logits)
+        y_hat_majority_vote.append(img_yhat_majority_vote)
+    y = torch.stack(y)
+    y_hat_rawsum = torch.stack(y_hat_rawsum)
+    y_hat_majority_vote = torch.stack(y_hat_majority_vote)
 
+    rawsum_acc = torchmetrics.functional.accuracy(y_hat_rawsum.cpu(), y)
+    majority_vote_acc = torchmetrics.functional.accuracy(y_hat_majority_vote.cpu(), y)
+
+    # percent_class_MSIMUT = sum(y_hat_majority_vote==self.MSIMUT_label)/len(y_hat_majority_vote)
+    # percent_class_MSIMUT = 1-sum(y_hat_majority_vote)/len(y_hat_majority_vote)
+
+    return majority_vote_acc   # , rawsum_acc, # , percent_class_MSIMUT
 
 
 
@@ -370,6 +418,8 @@ def make_roc_main(models, model_names, dms):
         all_img_fpr = []
         all_img_tpr = []
         all_img_auc = []
+        all_patch_acc = []
+        all_patient_acc = []
 
 
         for i, model in enumerate(models):
@@ -389,6 +439,11 @@ def make_roc_main(models, model_names, dms):
             record_dict[model_name][f'preds{i}'] = preds
             record_dict[model_name][f'y_gt{i}'] = y_gt
             record_dict[model_name][f'val_img_samples_score_dict{i}'] = val_img_samples_score_dict
+            patch_acc = get_patch_acc(preds, y_gt)
+            patient_acc = get_patient_acc(val_img_samples_score_dict, val_samples_gt_dict)
+            record_dict[model_name][f'patch_acc{i}'] = patch_acc
+            record_dict[model_name][f'patient_acc{i}'] = patient_acc
+            print(f'Patch acc: {patch_acc}, Patient_acc: {patient_acc}')
 
             # samples level ROC stats
             sample_fpr, sample_tpr, sample_thresholds, sample_auc_score = get_roc_sample_level(preds, y_gt)
@@ -412,6 +467,9 @@ def make_roc_main(models, model_names, dms):
             all_img_fpr.append(img_fpr)
             all_img_tpr.append(img_tpr)
             all_img_auc.append(img_auc_score)
+            all_patch_acc.append(patch_acc)
+            all_patient_acc.append(patient_acc)
+
         
         # average the numbers
         # and interpolate
@@ -444,12 +502,22 @@ def make_roc_main(models, model_names, dms):
         record_dict[model_name]["std_img_auc"] = std_img_auc
         record_dict[model_name]["std_img_tpr"] = [std_img_tpr1, std_img_tpr2]
 
+        avg_patch_acc = np.mean(all_patch_acc)
+        patch_std = np.std(all_patch_acc)
+        avg_patient_acc = np.mean(all_patient_acc)
+        patient_std = np.std(all_patient_acc)
+        print(f'🧮 AVG patch acc: {avg_patch_acc} --- AVG patient acc: {avg_patient_acc} ---')
+        print(f'🧮 patch STD: {patch_std} --- patient STD: {patient_std} ---')
+        record_dict[model_name]["avg_patch_acc"] = avg_patch_acc
+        record_dict[model_name]["avg_patient_acc"] = avg_patient_acc
+
         record_dict[model_name]["interp_space"] = interp_space
 
 
 
     make_plot_matplotlib_sample_level(record_dict)
     make_plot_matplotlib_image_level(record_dict)
+    log_accs(record_dict)
 
 
 
@@ -477,17 +545,17 @@ if __name__ == "__main__":
     EXP_NAME = "ROC"
     # wandb.init(project="view_rocs", name=EXP_NAME)
     # wandb.init(project="moti_tcga_AVG10", name=EXP_NAME)
-    wandb.init(project="moti_tcga_AVG100_2class", name=EXP_NAME)
+    # wandb.init(project="moti_tcga_AVG100_2class", name=EXP_NAME)
 
     
     # checkpoint dirs
-    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.774.ckpt'
-    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.830-val_acc_epoch=0.784.ckpt'
-    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.789.ckpt'
-    lightly_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.795.ckpt'
-    lightly_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.803.ckpt'
-    lightly_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.797.ckpt'
-    lightly_checkpoints = [lightly_checkpoint_1, lightly_checkpoint_2, lightly_checkpoint_3, lightly_checkpoint_4, lightly_checkpoint_5, lightly_checkpoint_6]
+    lightly_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/downstream_MLP_L2_wd1e-06/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.789.ckpt'
+    lightly_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/downstream_MLP_L2_wd1e-06/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.792-v1.ckpt'
+    lightly_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/downstream_MLP_L2_wd1e-06/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.792.ckpt'
+    lightly_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/downstream_MLP_L2_wd1e-06/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.800.ckpt'
+    lightly_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/downstream_MLP_L2_wd1e-06/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.802.ckpt'
+    # lightly_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_MLP_L2_wd1e06/'
+    lightly_checkpoints = [lightly_checkpoint_1, lightly_checkpoint_2, lightly_checkpoint_3, lightly_checkpoint_4, lightly_checkpoint_5]
 
     resnet_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.715.ckpt'
     resnet_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.840-val_acc_epoch=0.705.ckpt'
@@ -497,13 +565,13 @@ if __name__ == "__main__":
     resnet_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/resnet/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.719.ckpt'
     resnet_checkpoints = [resnet_checkpoint_1, resnet_checkpoint_2, resnet_checkpoint_3, resnet_checkpoint_4, resnet_checkpoint_5, resnet_checkpoint_6]
 
-    cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.743.ckpt'
-    cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.765.ckpt'
-    cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.746.ckpt'
-    cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.752.ckpt'
-    cnn_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.784.ckpt'
-    cnn_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.755.ckpt'
-    cnn_checkpoints = [cnn_checkpoint_1, cnn_checkpoint_2, cnn_checkpoint_3, cnn_checkpoint_4, cnn_checkpoint_5, cnn_checkpoint_6]
+    # cnn_checkpoint_1 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.743.ckpt'
+    # cnn_checkpoint_2 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.810-val_acc_epoch=0.765.ckpt'
+    # cnn_checkpoint_3 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.746.ckpt'
+    # cnn_checkpoint_4 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.752.ckpt'
+    # cnn_checkpoint_5 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.850-val_acc_epoch=0.784.ckpt'
+    # cnn_checkpoint_6 = '/home/shats/repos/hrdl/saved_models/avg100ep_2class/downstream_CNN/epoch=99-val_majority_vote_acc=0.860-val_acc_epoch=0.755.ckpt'
+    # cnn_checkpoints = [cnn_checkpoint_1, cnn_checkpoint_2, cnn_checkpoint_3, cnn_checkpoint_4, cnn_checkpoint_5, cnn_checkpoint_6]
 
     ####################### 💡 LIGHTLY MODEL CONFIG 💡 ####################### 
     # NOT IMPORTANT
@@ -645,7 +713,7 @@ if __name__ == "__main__":
         #         num_FC=num_FC,
         #         use_LRa=use_LRa
         #         )
-    downstream_cnn_models = [downstream_cnn_model.load_from_checkpoint(cnn_checkpoint,backbone=backbone,max_epochs=moco_max_epochs,lr=lr,num_classes=2,logger=logger,dataloader_group_size=dataloader_group_size,log_everything=True,freeze_backbone=freeze_backbone,fe=fe,use_dropout=use_dropout,num_FC=num_FC,use_LRa=use_LRa) for cnn_checkpoint in cnn_checkpoints]
+    # downstream_cnn_models = [downstream_cnn_model.load_from_checkpoint(cnn_checkpoint,backbone=backbone,max_epochs=moco_max_epochs,lr=lr,num_classes=2,logger=logger,dataloader_group_size=dataloader_group_size,log_everything=True,freeze_backbone=freeze_backbone,fe=fe,use_dropout=use_dropout,num_FC=num_FC,use_LRa=use_LRa) for cnn_checkpoint in cnn_checkpoints]
     print(' ... Done :) ')
 
 
@@ -667,13 +735,13 @@ if __name__ == "__main__":
     # model_names = ["CNN_head"]
     # dms = [downstream_cnn_dm]
 
-    # models = [resnet_models, downstream_models]
-    # model_names = ["Resnet", "Downstream_MOCO"]
-    # dms = [resnet_dm, downstream_dm]
+    models = [resnet_models, downstream_models]
+    model_names = ["Resnet", "Downstream_MOCO"]
+    dms = [resnet_dm, downstream_dm]
 
-    models = [resnet_models, downstream_models, downstream_cnn_models]
-    model_names = ["Resnet", "Downstream_MOCO", "CNN_head"]
-    dms = [resnet_dm, downstream_dm, downstream_cnn_dm]
+    # models = [resnet_models, downstream_models, downstream_cnn_models]
+    # model_names = ["Resnet", "Downstream_MOCO", "CNN_head"]
+    # dms = [resnet_dm, downstream_dm, downstream_cnn_dm]
     
     make_roc_main(models, model_names, dms)
 
